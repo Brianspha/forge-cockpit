@@ -1,0 +1,8 @@
+node_modules/
+out/
+dist/
+*.vsix
+*.d.ts
+coverage/
+.nyc_output/
+webpack.config.cjs

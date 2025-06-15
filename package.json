@@ -1,0 +1,163 @@
+{
+  "name": "forge-cockpit",
+  "displayName": "forge-cockpit",
+  "description": "Forge test runner, and UI generator",
+  "publisher": "brianspha",
+  "version": "0.0.1",
+  "engines": {
+    "vscode": "^1.99.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "menus": {
+      "editor/title": [
+        {
+          "command": "forge-cockpit.rerunLastTest",
+          "when": "resourceExtname == .sol && workspaceHasFoundry",
+          "group": "navigation"
+        }
+      ],
+      "commandPalette": [
+        {
+          "command": "forge-cockpit.rerunLastTest",
+          "when": "workspaceHasFoundry"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "forge-cockpit.stubForgeTests",
+          "when": "view == forgeCockpitTests && viewItem == contract",
+          "group": "inline"
+        },
+        {
+          "command": "forge-cockpit.runGroup",
+          "when": "view == forgeCockpitTests && viewItem == testGroup",
+          "group": "inline"
+        }
+      ],
+      "view/title": []
+    },
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "forge-cockpit",
+          "title": "Forge Cockpit",
+          "icon": "media/icon.png"
+        }
+      ]
+    },
+    "views": {
+      "forge-cockpit": [
+        {
+          "id": "forgeCockpitActions",
+          "name": "Cockpit Actions"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "forge-cockpit.stubForgeTests",
+        "title": "Generate Test Stub From ABI",
+        "category": "Forge Cockpit",
+        "icon": "$(file-add)"
+      },
+      {
+        "command": "cockpit.showForgeCockPit",
+        "title": "Open Cockpit",
+        "category": "Forge Cockpit",
+        "icon": "$(play)"
+      },
+      {
+        "command": "cockpit.clearCache",
+        "title": "Clear Cockpit Cache",
+        "category": "Forge Cockpit",
+        "icon": "$(notebook-delete-cell)"
+      },
+      {
+        "command": "forge-cockpit.refreshTests",
+        "title": "Refresh Tests",
+        "category": "Forge Cockpit",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "forge-cockpit.rerunLastTest",
+        "title": "Rerun Last Test",
+        "category": "Forge Cockpit",
+        "icon": "$(debug-restart)"
+      },
+      {
+        "command": "forge-cockpit.forgecockpit",
+        "title": "Forge Cockpit"
+      },
+      {
+        "command": "forge-cockpit.runGroup",
+        "title": "Run All Tests",
+        "icon": "$(notebook-execute-all)"
+      }
+    ]
+  },
+  "scripts": {
+    "vscode:prepublish": "make build && npm run package",
+    "compile": "webpack --config webpack.config.cjs",
+    "watch": "webpack --watch --config webpack.config.cjs",
+    "package": "webpack --mode production --devtool hidden-source-map --config webpack.config.cjs",
+    "compile-tests": "tsc -p . --outDir out",
+    "watch-tests": "tsc -p . -w --outDir out",
+    "pretest": "npm run compile-tests && npm run compile && npm run lint",
+    "test": "vscode-test",
+    "format": "make format",
+    "format:check": "make format-check",
+    "lint": "make lint",
+    "lint:fix": "make lint-fix",
+    "typecheck": "make typecheck",
+    "check": "make check",
+    "build:ui": "cd cockpit-ui && npm run build",
+    "dev:ui": "cd cockpit-ui && npm run start",
+    "pretty": "prettier --write './**/*.{js,jsx,mjs,cjs,ts,tsx,json}'",
+    "dev": "concurrently \"npm run dev:ui\" \"npm run watch\""
+  },
+  "devDependencies": {
+    "@types/glob": "^7.1.3",
+    "@types/json-bigint": "^1.0.4",
+    "@types/mocha": "^10.0.10",
+    "@types/node": "20.x",
+    "@types/vscode": "^1.99.0",
+    "@types/vscode-webview": "^1.57.5",
+    "@typescript-eslint/eslint-plugin": "^8.28.0",
+    "@typescript-eslint/parser": "^8.28.0",
+    "@vscode/test-cli": "^0.0.10",
+    "@vscode/test-electron": "^2.4.1",
+    "@vue/eslint-config-typescript": "^12.0.0",
+    "@vue/tsconfig": "^0.7.0",
+    "concurrently": "^9.1.2",
+    "eslint": "^9.23.0",
+    "eslint-config-prettier": "^9.0.0",
+    "eslint-plugin-vue": "^9.17.0",
+    "prettier": "^3.5.3",
+    "ts-loader": "^9.5.2",
+    "typescript": "^5.8.2",
+    "vite": "^6.3.3",
+    "webpack": "^5.98.0",
+    "webpack-cli": "^6.0.1"
+  },
+  "dependencies": {
+    "@solidity-parser/parser": "^0.20.1",
+    "@tomjs/vscode-extension-webview": "^2.0.0",
+    "@vscode/webview-ui-toolkit": "^1.4.0",
+    "bufferutil": "^4.0.9",
+    "dotenv": "^16.5.0",
+    "glob": "^7.1.6",
+    "solc-typed-ast": "^18.2.5",
+    "toml": "^3.0.0",
+    "utf-8-validate": "^6.0.5",
+    "viem": "^2.29.0",
+    "vscode-webview": "^1.0.1-beta.1",
+    "vue": "^3.5.13"
+  }
+}
