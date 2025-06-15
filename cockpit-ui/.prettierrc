@@ -8,17 +8,29 @@
   "bracketSpacing": true,
   "arrowParens": "avoid",
   "endOfLine": "lf",
+  "vueIndentScriptAndStyle": true,
+  "htmlWhitespaceSensitivity": "ignore",
   "overrides": [
     {
       "files": "*.vue",
       "options": {
-        "parser": "vue"
+        "parser": "vue",
+        "vueIndentScriptAndStyle": true
       }
     },
     {
       "files": "*.json",
       "options": {
-        "parser": "json"
+        "parser": "json",
+        "trailingComma": "none"
+      }
+    },
+    {
+      "files": "*.md",
+      "options": {
+        "parser": "markdown",
+        "printWidth": 100,
+        "proseWrap": "always"
       }
     }
   ]
