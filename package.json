@@ -2,7 +2,7 @@
   "name": "forge-cockpit",
   "displayName": "forge-cockpit",
   "description": "Forge test runner, and UI generator",
-  "publisher": "brianspha",
+  "publisher": "siphamandlamjoli",
   "version": "0.0.1",
   "engines": {
     "vscode": "^1.99.0"
