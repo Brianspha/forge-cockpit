@@ -2,43 +2,43 @@ import typescriptEslint from "@typescript-eslint/eslint-plugin";
 import tsParser from "@typescript-eslint/parser";
 
 export default [
-  {
-    files: ["**/*.ts"],
-  },
-  {
-    plugins: {
-      "@typescript-eslint": typescriptEslint,
-    },
+	{
+		files: ["**/*.ts"],
+	},
+	{
+		plugins: {
+			"@typescript-eslint": typescriptEslint,
+		},
 
-    languageOptions: {
-      parser: tsParser,
-      ecmaVersion: 2022,
-      sourceType: "module",
-    },
+		languageOptions: {
+			parser: tsParser,
+			ecmaVersion: 2022,
+			sourceType: "module",
+		},
 
-    rules: {
-      "@typescript-eslint/naming-convention": [
-        "warn",
-        {
-          selector: "import",
-          format: ["camelCase", "PascalCase"],
-        },
-      ],
+		rules: {
+			"@typescript-eslint/naming-convention": [
+				"warn",
+				{
+					selector: "import",
+					format: ["camelCase", "PascalCase"],
+				},
+			],
 
-      curly: "warn",
-      eqeqeq: "warn",
-      "no-throw-literal": "warn",
-      semi: "warn",
-    },
-  },
-  {
-    ignores: [
-      "out/",
-      "dist/",
-      "**/*.d.ts",
-      "node_modules/",
-      "webpack.config.cjs",
-      "forge-cockpit-ui/",
-    ],
-  },
+			curly: "warn",
+			eqeqeq: "warn",
+			"no-throw-literal": "warn",
+			semi: "warn",
+		},
+	},
+	{
+		ignores: [
+			"out/",
+			"dist/",
+			"**/*.d.ts",
+			"node_modules/",
+			"webpack.config.cjs",
+			"forge-cockpit-ui/",
+		],
+	},
 ];

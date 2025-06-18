@@ -3,6 +3,12 @@
   "displayName": "forge-cockpit",
   "description": "Forge test runner, and UI generator",
   "publisher": "siphamandlamjoli",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/brianspha/forge-cockpit.git",
+    "directory": ""        
+  },
   "version": "1.0.0",
   "engines": {
     "vscode": "^1.99.0"
@@ -103,7 +109,7 @@
     ]
   },
   "scripts": {
-    "vscode:prepublish": "make build && npm run package",
+    "vscode:prepublish": "npm run compile && npm run compile-tests && npm run lint",
     "compile": "webpack --config webpack.config.cjs",
     "watch": "webpack --watch --config webpack.config.cjs",
     "package": "webpack --mode production --devtool hidden-source-map --config webpack.config.cjs",
@@ -111,12 +117,12 @@
     "watch-tests": "tsc -p . -w --outDir out",
     "pretest": "npm run compile-tests && npm run compile && npm run lint",
     "test": "vscode-test",
-    "format": "make format",
-    "format:check": "make format-check",
-    "lint": "make lint",
-    "lint:fix": "make lint-fix",
-    "typecheck": "make typecheck",
-    "check": "make check",
+    "format": "prettier --write './**/*.{js,jsx,mjs,cjs,ts,tsx,json}'",
+    "format:check": "prettier --check './**/*.{js,jsx,mjs,cjs,ts,tsx,json}'",
+    "lint": "eslint './**/*.{ts,tsx,js,jsx,vue}' -f stylish | tee lint-report.txt",
+    "lint:fix": "eslint './**/*.{ts,tsx,js,jsx,vue}' --fix",
+    "typecheck": "vue-tsc --noEmit",
+    "check": "npm run typecheck && npm run lint",
     "build:ui": "cd cockpit-ui && npm run build",
     "dev:ui": "cd cockpit-ui && npm run start",
     "pretty": "prettier --write './**/*.{js,jsx,mjs,cjs,ts,tsx,json}'",
@@ -153,6 +159,8 @@
     "bufferutil": "^4.0.9",
     "dotenv": "^16.5.0",
     "glob": "^7.1.6",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
     "solc-typed-ast": "^18.2.5",
     "toml": "^3.0.0",
     "utf-8-validate": "^6.0.5",
