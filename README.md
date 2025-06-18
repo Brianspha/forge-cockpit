@@ -24,7 +24,9 @@ This is a Proof of Concept extension inspired by [EmbarkJS](https://github.com/e
 
 ![Contract Interface](media/2.png)
 
-![Test Runner](media/3.png)
+![Test Runner](media/4.png)
+
+![Fork existing contract](media/5.png)
 
 ## Requirements
 
