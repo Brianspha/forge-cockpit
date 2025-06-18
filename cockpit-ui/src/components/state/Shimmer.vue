@@ -1,10 +1,10 @@
 <script setup lang="ts">
-defineProps<{
-  height?: string;
-  width?: string;
-  borderRadius?: string;
-  margin?: string;
-}>();
+  defineProps<{
+    height?: string;
+    width?: string;
+    borderRadius?: string;
+    margin?: string;
+  }>();
 </script>
 
 <template>
@@ -20,35 +20,35 @@ defineProps<{
 </template>
 
 <style scoped>
-.shimmer {
-  background-color: var(--shimmer-color);
-  position: relative;
-  overflow: hidden;
-}
+  .shimmer {
+    background-color: var(--shimmer-color);
+    position: relative;
+    overflow: hidden;
+  }
 
-.shimmer::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 50%;
-  height: 100%;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    var(--shimmer-animation),
-    transparent
-  );
-  animation: shimmer 1.5s infinite;
-}
-
-@keyframes shimmer {
-  0% {
+  .shimmer::after {
+    content: '';
+    position: absolute;
+    top: 0;
     left: -100%;
+    width: 50%;
+    height: 100%;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      var(--shimmer-animation),
+      transparent
+    );
+    animation: shimmer 1.5s infinite;
   }
 
-  100% {
-    left: 100%;
+  @keyframes shimmer {
+    0% {
+      left: -100%;
+    }
+
+    100% {
+      left: 100%;
+    }
   }
-}
 </style>

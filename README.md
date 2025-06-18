@@ -1,71 +1,90 @@
-# forge-cockpit README
+# Forge Cockpit
 
-This is the README for your extension "forge-cockpit". After writing up a brief description, we recommend including the following sections.
+![Forge Cockpit Icon](media/icon.png)
+
+This is a Proof of Concept extension inspired by [EmbarkJS](https://github.com/embarklabs/embark/tree/master) more specifically the EmbarkJS cockpit. This extension experiments with introducing a User Interface for interacting with Anvil, deploying scripts as well as provides a test runner and stubber for your smart contracts.
+
+[![VS Code Marketplace](https://img.shields.io/vscode-marketplace/v/siphamandlamjoli.forge-cockpit.svg)](https://marketplace.visualstudio.com/items?itemName=siphamandlamjoli.forge-cockpit)
+[![Downloads](https://img.shields.io/vscode-marketplace/d/siphamandlamjoli.forge-cockpit.svg)](https://marketplace.visualstudio.com/items?itemName=siphamandlamjoli.forge-cockpit)
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![Foundry](https://img.shields.io/badge/Foundry-compatible-red)](https://getfoundry.sh/)
+[![Solidity](https://img.shields.io/badge/Solidity-compatible-363636)](https://soliditylang.org/)
 
 ## Features
 
-Describe specific features of your extension including screenshots of your extension in action. Image paths are relative to this README file.
+- **Anvil Management**: Create and manage local and forked Anvil instances
+- **Contract Deployment**: Deploy contracts directly to running instances
+- **Contract Interface**: Generate Etherscan-like interfaces from contract ABIs
+- **Contract Interaction**: Read from and write to deployed contracts through the generated interface
+- **Test Generation**: Stub contract tests for deployed contracts
+- **Test Runner**: Execute Forge tests with integrated runner
+- **Code Lens**: Run individual Forge tests directly from the editor
 
-For example if there is an image subfolder under your extension project workspace:
+![Anvil Instance Management](media/1.png)
 
-\!\[feature X\]\(images/feature-x.png\)
+![Contract Interface](media/2.png)
 
-> Tip: Many popular extensions utilize animations. This is an excellent way to show off your extension! We recommend short, focused animations that are easy to follow.
+![Test Runner](media/3.png)
 
 ## Requirements
 
-If you have any requirements or dependencies, add a section describing those and how to install and configure them.
+- [Foundry](https://getfoundry.sh/) installed and available in PATH
+- Active workspace with Foundry project structure
 
-## Extension Settings
+## Installation
 
-Include if your extension adds any VS Code settings through the `contributes.configuration` extension point.
+Install from the VS Code marketplace or build from source.
 
-For example:
+## Usage
 
-This extension contributes the following settings:
+1. Open a Foundry project in VS Code
+2. Use the command palette to access Forge Cockpit commands
+3. Create an Anvil instance (local or forked)
+4. Deploy contracts and interact through the generated interface
 
-- `myExtension.enable`: Enable/disable this extension.
-- `myExtension.thing`: Set to `blah` to do something.
+## Configuration
+
+### Account Management
+
+Create a `cockpit-accounts.json` file in your project root to configure accounts for use with the extension:
+
+```json
+{
+  "accounts": {
+    "Private_key1": "Public_key1",
+    "Private_key2": "Public_key2",
+    "Private_key3": "Public_key3",
+    "Private_key4": "Public_key4",
+    "Private_key5": "Public_key5"
+  }
+}
+```
+
+The format maps private keys to their corresponding addresses. These accounts will be available for contract deployment and interaction within the extension. Alternatively you can use the in built import function.
+
+> **Security Note**: Only use test accounts and never use real accounts
+
+## FAQ
+
+**Q: Can I use this with mainnet forks?**
+A: Yes, you can create forked Anvil instances that fork from mainnet or other EVM chains.
+
+**Q: Can I use this in production?**
+A: No, this is designed for development environments only with local Anvil instances.
 
 ## Known Issues
 
-Calling out known issues can help limit users opening duplicate issues against your extension.
+As this is an experimental extension there maybe issue outside of the known
+
+- Getting events after a transaction may fail due to max limit of 5K for fetching events
+- There are instances where the extension UI refuses to, the solution to this requires reloading the vscode window.
 
 ## Release Notes
 
-Users appreciate release notes as you update your extension.
-
 ### 1.0.0
 
-Initial release of ...
-
-### 1.0.1
-
-Fixed issue #.
-
-### 1.1.0
-
-Added features X, Y, and Z.
+Initial proof of concept release
 
 ---
 
-## Following extension guidelines
-
-Ensure that you've read through the extensions guidelines and follow the best practices for creating your extension.
-
-- [Extension Guidelines](https://code.visualstudio.com/api/references/extension-guidelines)
-
-## Working with Markdown
-
-You can author your README using Visual Studio Code. Here are some useful editor keyboard shortcuts:
-
-- Split the editor (`Cmd+\` on macOS or `Ctrl+\` on Windows and Linux).
-- Toggle preview (`Shift+Cmd+V` on macOS or `Shift+Ctrl+V` on Windows and Linux).
-- Press `Ctrl+Space` (Windows, Linux, macOS) to see a list of Markdown snippets.
-
-## For more information
-
-- [Visual Studio Code's Markdown Support](http://code.visualstudio.com/docs/languages/markdown)
-- [Markdown Syntax Reference](https://help.github.com/articles/markdown-basics/)
-
-**Enjoy!**
+**Note**: This is a proof of concept extension. Use in development environments only.

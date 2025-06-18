@@ -135,9 +135,10 @@ export const useContractStore = defineStore('contract', {
           status: transaction.success,
           result: transaction.address || '',
           caller: transaction.address || '',
-          logs: (JSON.parse(response.payload.logs) as Array<ProcessedEvent>) || [],
+          logs:
+            (JSON.parse(response.payload.logs) as Array<ProcessedEvent>) || [],
           address: transaction.address || '',
-          nodeUrl: ''
+          nodeUrl: '',
         });
       } else {
         this.lastDeployedContract = null;

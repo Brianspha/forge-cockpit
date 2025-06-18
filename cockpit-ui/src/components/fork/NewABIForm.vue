@@ -1,75 +1,75 @@
 <script setup lang="ts">
-import { defineProps, defineEmits, computed } from 'vue';
-import type { AbiFormData, AnvilInstance } from '../../types/index';
-import { isValidAddress } from '../../utils';
+  import { defineProps, defineEmits, computed } from 'vue';
+  import type { AbiFormData, AnvilInstance } from '../../types/index';
+  import { isValidAddress } from '../../utils';
 
-const props = defineProps<{
-  formData: AbiFormData;
-  selectedForkId: string;
-  availableForks: AnvilInstance[];
-  isLoading: boolean;
-  isPasteAddressLoading: boolean;
-  isNodeURLLoading: boolean;
-  isPortPasteLoading: boolean;
-  forkError: string;
-  isDownloadingAbi?: boolean;
-}>();
+  const props = defineProps<{
+    formData: AbiFormData;
+    selectedForkId: string;
+    availableForks: AnvilInstance[];
+    isLoading: boolean;
+    isPasteAddressLoading: boolean;
+    isNodeURLLoading: boolean;
+    isPortPasteLoading: boolean;
+    forkError: string;
+    isDownloadingAbi?: boolean;
+  }>();
 
-const emit = defineEmits<{
-  (e: 'paste-field', fieldName: string): void;
-  (e: 'paste-abi'): void;
-  (e: 'upload-file', event: Event): void;
-  (e: 'connect'): void;
-  (e: 'toggle-existing-node', value: boolean): void;
-  (e: 'update:selectedForkId', value: string): void;
-  (e: 'download-abi'): void;
-}>();
+  const emit = defineEmits<{
+    (e: 'paste-field', fieldName: string): void;
+    (e: 'paste-abi'): void;
+    (e: 'upload-file', event: Event): void;
+    (e: 'connect'): void;
+    (e: 'toggle-existing-node', value: boolean): void;
+    (e: 'update:selectedForkId', value: string): void;
+    (e: 'download-abi'): void;
+  }>();
 
-const pasteField = (fieldName: string) => {
-  emit('paste-field', fieldName);
-};
+  const pasteField = (fieldName: string) => {
+    emit('paste-field', fieldName);
+  };
 
-const pasteAbi = () => {
-  emit('paste-abi');
-};
+  const pasteAbi = () => {
+    emit('paste-abi');
+  };
 
-const uploadFile = (event: Event) => {
-  emit('upload-file', event);
-};
+  const uploadFile = (event: Event) => {
+    emit('upload-file', event);
+  };
 
-const connect = () => {
-  emit('connect');
-};
+  const connect = () => {
+    emit('connect');
+  };
 
-const toggleExistingNode = (value: boolean) => {
-  emit('toggle-existing-node', value);
-};
+  const toggleExistingNode = (value: boolean) => {
+    emit('toggle-existing-node', value);
+  };
 
-const updateSelectedForkId = (event: Event) => {
-  const target = event.target as HTMLSelectElement;
-  emit('update:selectedForkId', target.value);
-};
+  const updateSelectedForkId = (event: Event) => {
+    const target = event.target as HTMLSelectElement;
+    emit('update:selectedForkId', target.value);
+  };
 
-const downloadAbi = () => {
-  emit('download-abi');
-};
+  const downloadAbi = () => {
+    emit('download-abi');
+  };
 
-const canDownloadAbi = computed(() => {
-  return (
-    isValidAddress(props.formData.contractAddress) && !props.isDownloadingAbi
-  );
-});
+  const canDownloadAbi = computed(() => {
+    return (
+      isValidAddress(props.formData.contractAddress) && !props.isDownloadingAbi
+    );
+  });
 
-const isConnectDisabled = computed(() => {
-  return (
-    props.isLoading ||
-    !props.formData.contractAddress ||
-    !props.formData.customAbi ||
-    (!props.formData.useExistingNode &&
-      (!props.formData.nodeUrl || !props.formData.port)) ||
-    (props.formData.useExistingNode && !props.selectedForkId)
-  );
-});
+  const isConnectDisabled = computed(() => {
+    return (
+      props.isLoading ||
+      !props.formData.contractAddress ||
+      !props.formData.customAbi ||
+      (!props.formData.useExistingNode &&
+        (!props.formData.nodeUrl || !props.formData.port)) ||
+      (props.formData.useExistingNode && !props.selectedForkId)
+    );
+  });
 </script>
 
 <template>
@@ -104,9 +104,9 @@ const isConnectDisabled = computed(() => {
       </div>
 
       <div class="form-group">
-        <label for="node-url">{{
-          formData.useExistingNode ? 'Select Fork' : 'Node URL'
-        }}</label>
+        <label for="node-url">
+          {{ formData.useExistingNode ? 'Select Fork' : 'Node URL' }}
+        </label>
 
         <div v-if="formData.useExistingNode" class="select-container">
           <select
@@ -423,9 +423,9 @@ const isConnectDisabled = computed(() => {
       <div v-if="forkError" class="error-message fork-error">
         <div class="error-header">
           <span class="error-icon">❌</span>
-          <span>{{
-            formData.useExistingNode ? 'Connection Error' : 'Fork Error'
-          }}</span>
+          <span>
+            {{ formData.useExistingNode ? 'Connection Error' : 'Fork Error' }}
+          </span>
         </div>
         <p>{{ forkError }}</p>
       </div>
@@ -444,11 +444,13 @@ const isConnectDisabled = computed(() => {
             <span class="button-spinner"></span>
             Connecting...
           </span>
-          <span v-else>{{
-            formData.useExistingNode
-              ? 'Connect through Fork'
-              : 'Create Fork & Connect'
-          }}</span>
+          <span v-else>
+            {{
+              formData.useExistingNode
+                ? 'Connect through Fork'
+                : 'Create Fork & Connect'
+            }}
+          </span>
         </button>
       </div>
     </div>
@@ -456,384 +458,385 @@ const isConnectDisabled = computed(() => {
 </template>
 
 <style scoped>
-.new-abi-form {
-  max-width: 800px;
-  margin: 0 auto;
-}
-
-.section-title {
-  font-size: 1.5rem;
-  font-weight: 600;
-  margin-bottom: 0.5rem;
-  color: var(--vscode-foreground);
-}
-
-.section-description {
-  color: var(--vscode-descriptionForeground);
-  margin-bottom: 1.5rem;
-}
-
-.form-container {
-  background-color: var(--vscode-editor-background);
-  border: 1px solid var(--vscode-widget-border);
-  border-radius: 4px;
-  padding: 1.5rem;
-}
-
-.function-tabs {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  margin-bottom: 1.5rem;
-  padding: 0.5rem 0;
-}
-
-.function-tab {
-  padding: 0.5rem 1.25rem;
-  border-radius: 1.5rem;
-  border: 1px solid var(--vscode-button-border, var(--vscode-button-background));
-  background-color: var(--vscode-button-secondaryBackground, transparent);
-  font-size: 0.9rem;
-  font-weight: 600;
-  color: var(--vscode-button-secondaryForeground, var(--vscode-foreground));
-  cursor: pointer;
-  transition: all 0.2s ease;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: 36px;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
-  position: relative;
-  overflow: hidden;
-}
-
-.function-tab.active {
-  background-color: var(--vscode-button-background);
-  color: var(--vscode-button-foreground);
-  border-color: var(--vscode-button-background);
-}
-
-.function-tab:hover:not(.active) {
-  background-color: var(
-    --vscode-button-secondaryHoverBackground,
-    rgba(255, 255, 255, 0.1)
-  );
-}
-
-.pill-icon {
-  display: inline-block;
-  width: 16px;
-  height: 16px;
-  margin-right: 8px;
-  background-repeat: no-repeat;
-  background-position: center;
-  background-size: contain;
-  opacity: 0.8;
-}
-
-.fork-icon::before {
-  content: '';
-  display: inline-block;
-  width: 16px;
-  height: 16px;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='18' r='3'%3E%3C/circle%3E%3Ccircle cx='6' cy='6' r='3'%3E%3C/circle%3E%3Ccircle cx='18' cy='6' r='3'%3E%3C/circle%3E%3Cpath d='M18 9v1a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V9'%3E%3C/path%3E%3Cpath d='M12 12v3'%3E%3C/path%3E%3C/svg%3E");
-  vertical-align: middle;
-  margin-right: 8px;
-}
-
-.connect-icon::before {
-  content: '';
-  display: inline-block;
-  width: 16px;
-  height: 16px;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='5' y='2' width='14' height='20' rx='2' ry='2'%3E%3C/rect%3E%3Cline x1='12' y1='18' x2='12.01' y2='18'%3E%3C/line%3E%3C/svg%3E");
-  vertical-align: middle;
-  margin-right: 8px;
-}
-
-.form-group {
-  margin-bottom: 1.5rem;
-}
-
-.form-group label {
-  display: block;
-  font-weight: 600;
-  margin-bottom: 0.5rem;
-}
-
-.select-container {
-  position: relative;
-  width: 100%;
-}
-
-.select-input {
-  width: 100%;
-  padding: 0.75rem;
-  border: 1px solid var(--vscode-input-border);
-  border-radius: 4px;
-  background-color: var(--vscode-input-background);
-  color: var(--vscode-input-foreground);
-  font-family: var(--vscode-font-family);
-  font-size: 0.9rem;
-  -webkit-appearance: none;
-  -moz-appearance: none;
-  appearance: none;
-  cursor: pointer;
-}
-
-.select-container::after {
-  content: '';
-  position: absolute;
-  top: 50%;
-  right: 15px;
-  transform: translateY(-50%);
-  width: 0;
-  height: 0;
-  border-left: 5px solid transparent;
-  border-right: 5px solid transparent;
-  border-top: 5px solid var(--vscode-foreground);
-  pointer-events: none;
-}
-
-.input-with-embedded-button {
-  position: relative;
-  width: 100%;
-}
-
-.text-input.with-button {
-  padding-right: 40px;
-  width: 100%;
-  padding: 0.75rem;
-  border: 1px solid var(--vscode-input-border);
-  border-radius: 4px;
-  background-color: var(--vscode-input-background);
-  color: var(--vscode-input-foreground);
-  font-family: var(--vscode-font-family);
-  font-size: 0.9rem;
-}
-
-.text-input.invalid-address {
-  border-color: var(--vscode-inputValidation-errorBorder);
-}
-
-.embedded-paste-button {
-  position: absolute;
-  right: 0;
-  top: 0;
-  height: 100%;
-  width: 36px;
-  background: transparent;
-  border: none;
-  border-left: 1px solid var(--vscode-input-border);
-  color: var(--vscode-foreground);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  opacity: 0.7;
-  transition:
-    opacity 0.2s,
-    background-color 0.2s;
-}
-
-.embedded-paste-button:hover:not(:disabled) {
-  opacity: 1;
-  background-color: rgba(255, 255, 255, 0.1);
-}
-
-.text-area {
-  width: 100%;
-  min-height: 150px;
-  padding: 0.75rem;
-  border: 1px solid var(--vscode-input-border);
-  border-radius: 4px;
-  background-color: var(--vscode-input-background);
-  color: var(--vscode-input-foreground);
-  font-family: var(--vscode-editor-font-family, monospace);
-  font-size: 0.9rem;
-  resize: vertical;
-}
-
-.field-hint {
-  margin-top: 0.25rem;
-  font-size: 0.8rem;
-  color: var(--vscode-descriptionForeground);
-}
-
-.invalid-hint {
-  color: var(--vscode-inputValidation-errorForeground);
-  display: block;
-  margin-top: 0.25rem;
-}
-
-.abi-input-container {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  width: 100%;
-}
-
-.abi-actions {
-  display: flex;
-  gap: 8px;
-}
-
-.action-button {
-  height: 36px;
-  padding: 0 16px;
-  border-radius: 4px;
-  font-size: 0.9rem;
-  font-weight: 500;
-  cursor: pointer;
-  border: none;
-  transition: all 0.2s;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  position: relative;
-}
-
-.clipboard-button,
-.upload-button,
-.download-button {
-  flex: 1;
-  background-color: var(--vscode-button-background);
-  color: var(--vscode-button-foreground);
-  position: relative;
-}
-
-.clipboard-button:hover:not(:disabled),
-.upload-button:hover:not(:disabled),
-.download-button:hover:not(:disabled),
-.primary-button:hover:not(:disabled) {
-  background-color: var(--vscode-button-hoverBackground);
-}
-
-.button-content {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  width: 100%;
-}
-
-.button-icon {
-  flex-shrink: 0;
-}
-
-.file-input {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  opacity: 0;
-  cursor: pointer;
-  z-index: 2;
-}
-
-.button-spinner {
-  width: 16px;
-  height: 16px;
-  border: 2px solid rgba(255, 255, 255, 0.3);
-  border-top-color: white;
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-}
-
-.button-spinner.small {
-  width: 12px;
-  height: 12px;
-  border-width: 1.5px;
-}
-
-@keyframes spin {
-  0% {
-    transform: rotate(0deg);
+  .new-abi-form {
+    max-width: 800px;
+    margin: 0 auto;
   }
-  100% {
-    transform: rotate(360deg);
+
+  .section-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    color: var(--vscode-foreground);
   }
-}
 
-.validation-warnings {
-  margin-bottom: 1.5rem;
-  padding: 0.75rem;
-  background-color: var(--vscode-inputValidation-warningBackground);
-  border-left: 3px solid var(--vscode-inputValidation-warningBorder);
-  border-radius: 4px;
-}
+  .section-description {
+    color: var(--vscode-descriptionForeground);
+    margin-bottom: 1.5rem;
+  }
 
-.warning-header {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-weight: 600;
-  margin-bottom: 0.5rem;
-}
+  .form-container {
+    background-color: var(--vscode-editor-background);
+    border: 1px solid var(--vscode-widget-border);
+    border-radius: 4px;
+    padding: 1.5rem;
+  }
 
-.warning-list {
-  margin: 0;
-  padding-left: 2rem;
-  font-size: 0.9rem;
-  color: var(--vscode-foreground);
-}
+  .function-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+    padding: 0.5rem 0;
+  }
 
-.warning-list li {
-  margin-bottom: 0.25rem;
-}
+  .function-tab {
+    padding: 0.5rem 1.25rem;
+    border-radius: 1.5rem;
+    border: 1px solid
+      var(--vscode-button-border, var(--vscode-button-background));
+    background-color: var(--vscode-button-secondaryBackground, transparent);
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--vscode-button-secondaryForeground, var(--vscode-foreground));
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 36px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+    position: relative;
+    overflow: hidden;
+  }
 
-.error-message {
-  margin-bottom: 1.5rem;
-  padding: 0.75rem;
-  background-color: var(--vscode-inputValidation-errorBackground);
-  border-left: 3px solid var(--vscode-inputValidation-errorBorder);
-  color: var(--vscode-inputValidation-errorForeground);
-  border-radius: 4px;
-}
+  .function-tab.active {
+    background-color: var(--vscode-button-background);
+    color: var(--vscode-button-foreground);
+    border-color: var(--vscode-button-background);
+  }
 
-.fork-error {
-  background-color: var(--vscode-inputValidation-errorBackground);
-  border-left: 3px solid var(--vscode-inputValidation-errorBorder);
-  border-radius: 4px;
-}
+  .function-tab:hover:not(.active) {
+    background-color: var(
+      --vscode-button-secondaryHoverBackground,
+      rgba(255, 255, 255, 0.1)
+    );
+  }
 
-.error-header {
-  display: flex;
-  align-items: center;
-  font-weight: 600;
-  margin-bottom: 0.5rem;
-  gap: 0.5rem;
-}
+  .pill-icon {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    margin-right: 8px;
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: contain;
+    opacity: 0.8;
+  }
 
-.form-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 1rem;
-  padding-bottom: 5%;
-}
+  .fork-icon::before {
+    content: '';
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='18' r='3'%3E%3C/circle%3E%3Ccircle cx='6' cy='6' r='3'%3E%3C/circle%3E%3Ccircle cx='18' cy='6' r='3'%3E%3C/circle%3E%3Cpath d='M18 9v1a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V9'%3E%3C/path%3E%3Cpath d='M12 12v3'%3E%3C/path%3E%3C/svg%3E");
+    vertical-align: middle;
+    margin-right: 8px;
+  }
 
-.primary-button {
-  background-color: var(--vscode-button-background);
-  color: var(--vscode-button-foreground);
-}
+  .connect-icon::before {
+    content: '';
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='5' y='2' width='14' height='20' rx='2' ry='2'%3E%3C/rect%3E%3Cline x1='12' y1='18' x2='12.01' y2='18'%3E%3C/line%3E%3C/svg%3E");
+    vertical-align: middle;
+    margin-right: 8px;
+  }
 
-.action-button:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
+  .form-group {
+    margin-bottom: 1.5rem;
+  }
 
-@media (max-width: 768px) {
-  .abi-actions {
+  .form-group label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+  }
+
+  .select-container {
+    position: relative;
+    width: 100%;
+  }
+
+  .select-input {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid var(--vscode-input-border);
+    border-radius: 4px;
+    background-color: var(--vscode-input-background);
+    color: var(--vscode-input-foreground);
+    font-family: var(--vscode-font-family);
+    font-size: 0.9rem;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    cursor: pointer;
+  }
+
+  .select-container::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    right: 15px;
+    transform: translateY(-50%);
+    width: 0;
+    height: 0;
+    border-left: 5px solid transparent;
+    border-right: 5px solid transparent;
+    border-top: 5px solid var(--vscode-foreground);
+    pointer-events: none;
+  }
+
+  .input-with-embedded-button {
+    position: relative;
+    width: 100%;
+  }
+
+  .text-input.with-button {
+    padding-right: 40px;
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid var(--vscode-input-border);
+    border-radius: 4px;
+    background-color: var(--vscode-input-background);
+    color: var(--vscode-input-foreground);
+    font-family: var(--vscode-font-family);
+    font-size: 0.9rem;
+  }
+
+  .text-input.invalid-address {
+    border-color: var(--vscode-inputValidation-errorBorder);
+  }
+
+  .embedded-paste-button {
+    position: absolute;
+    right: 0;
+    top: 0;
+    height: 100%;
+    width: 36px;
+    background: transparent;
+    border: none;
+    border-left: 1px solid var(--vscode-input-border);
+    color: var(--vscode-foreground);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    opacity: 0.7;
+    transition:
+      opacity 0.2s,
+      background-color 0.2s;
+  }
+
+  .embedded-paste-button:hover:not(:disabled) {
+    opacity: 1;
+    background-color: rgba(255, 255, 255, 0.1);
+  }
+
+  .text-area {
+    width: 100%;
+    min-height: 150px;
+    padding: 0.75rem;
+    border: 1px solid var(--vscode-input-border);
+    border-radius: 4px;
+    background-color: var(--vscode-input-background);
+    color: var(--vscode-input-foreground);
+    font-family: var(--vscode-editor-font-family, monospace);
+    font-size: 0.9rem;
+    resize: vertical;
+  }
+
+  .field-hint {
+    margin-top: 0.25rem;
+    font-size: 0.8rem;
+    color: var(--vscode-descriptionForeground);
+  }
+
+  .invalid-hint {
+    color: var(--vscode-inputValidation-errorForeground);
+    display: block;
+    margin-top: 0.25rem;
+  }
+
+  .abi-input-container {
+    display: flex;
     flex-direction: column;
+    gap: 8px;
+    width: 100%;
+  }
+
+  .abi-actions {
+    display: flex;
+    gap: 8px;
+  }
+
+  .action-button {
+    height: 36px;
+    padding: 0 16px;
+    border-radius: 4px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    border: none;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+  }
+
+  .clipboard-button,
+  .upload-button,
+  .download-button {
+    flex: 1;
+    background-color: var(--vscode-button-background);
+    color: var(--vscode-button-foreground);
+    position: relative;
+  }
+
+  .clipboard-button:hover:not(:disabled),
+  .upload-button:hover:not(:disabled),
+  .download-button:hover:not(:disabled),
+  .primary-button:hover:not(:disabled) {
+    background-color: var(--vscode-button-hoverBackground);
+  }
+
+  .button-content {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+  }
+
+  .button-icon {
+    flex-shrink: 0;
+  }
+
+  .file-input {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    cursor: pointer;
+    z-index: 2;
+  }
+
+  .button-spinner {
+    width: 16px;
+    height: 16px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+  }
+
+  .button-spinner.small {
+    width: 12px;
+    height: 12px;
+    border-width: 1.5px;
+  }
+
+  @keyframes spin {
+    0% {
+      transform: rotate(0deg);
+    }
+    100% {
+      transform: rotate(360deg);
+    }
+  }
+
+  .validation-warnings {
+    margin-bottom: 1.5rem;
+    padding: 0.75rem;
+    background-color: var(--vscode-inputValidation-warningBackground);
+    border-left: 3px solid var(--vscode-inputValidation-warningBorder);
+    border-radius: 4px;
+  }
+
+  .warning-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+  }
+
+  .warning-list {
+    margin: 0;
+    padding-left: 2rem;
+    font-size: 0.9rem;
+    color: var(--vscode-foreground);
+  }
+
+  .warning-list li {
+    margin-bottom: 0.25rem;
+  }
+
+  .error-message {
+    margin-bottom: 1.5rem;
+    padding: 0.75rem;
+    background-color: var(--vscode-inputValidation-errorBackground);
+    border-left: 3px solid var(--vscode-inputValidation-errorBorder);
+    color: var(--vscode-inputValidation-errorForeground);
+    border-radius: 4px;
+  }
+
+  .fork-error {
+    background-color: var(--vscode-inputValidation-errorBackground);
+    border-left: 3px solid var(--vscode-inputValidation-errorBorder);
+    border-radius: 4px;
+  }
+
+  .error-header {
+    display: flex;
+    align-items: center;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    gap: 0.5rem;
   }
 
   .form-actions {
-    flex-direction: column;
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+    padding-bottom: 5%;
   }
 
-  .form-actions button {
-    width: 100%;
+  .primary-button {
+    background-color: var(--vscode-button-background);
+    color: var(--vscode-button-foreground);
   }
-}
+
+  .action-button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  @media (max-width: 768px) {
+    .abi-actions {
+      flex-direction: column;
+    }
+
+    .form-actions {
+      flex-direction: column;
+    }
+
+    .form-actions button {
+      width: 100%;
+    }
+  }
 </style>

@@ -52,7 +52,7 @@ module.exports = {
     '@typescript-eslint/no-unsafe-call': 'off',
     '@typescript-eslint/no-unsafe-return': 'off',
 
-    'vue/multi-word-component-names': 'off', 
+    'vue/multi-word-component-names': 'off',
     'vue/no-v-html': 'error',
     'vue/component-tags-order': [
       'error',
