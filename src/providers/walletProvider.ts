@@ -6,6 +6,7 @@ import {
 	TransactionReceipt,
 	defineChain,
 	parseEther,
+	PublicClient,
 } from "viem";
 import {
 	DeployContract,
@@ -20,11 +21,12 @@ import { CockPitLogProvider } from "./logProvider";
 import { safeStringify } from "../utils";
 
 export class WalletProvider {
-	private publicClient: ReturnType<typeof createPublicClient>;
+	private publicClient: PublicClient;
 	constructor(
 		private rpcUrl: string,
 		private logger: CockPitLogProvider
 	) {
+		//@ts-ignore
 		this.publicClient = createPublicClient({
 			transport: http(this.rpcUrl),
 		});
@@ -187,6 +189,7 @@ export class WalletProvider {
 				`Deploy started: ${config.contractName} | Args: ${JSON.stringify(config.constructorArgs)} | Deployer: ${config.msgSender}`
 			);
 
+			//@ts-ignore
 			const hash = await walletClient.deployContract({
 				abi: config.abi,
 				account: config.msgSender as `0x${string}`,
@@ -286,6 +289,7 @@ export class WalletProvider {
 			this.logger.logToOutput(
 				`Transferring ${info.amount} ETH to ${info.to as `0x${string}`} from ${info.from as `0x${string}`}`
 			);
+			//@ts-ignore
 			const hash = await walletClient.sendTransaction({
 				account: info.from as `0x${string}`,
 				to: info.to as `0x${string}`,

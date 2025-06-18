@@ -34,3 +34,6 @@ dist/
 coverage/
 .nyc_output/
 vite.config.ts
+*.DS_Store
+*.log
+.DS_Store
