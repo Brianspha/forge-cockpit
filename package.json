@@ -10,7 +10,7 @@
     "url": "https://github.com/brianspha/forge-cockpit.git",
     "directory": ""
   },
-  "version": "1.0.1",
+  "version": "1.1.0",
   "engines": {
     "vscode": "^1.99.0"
   },
@@ -111,7 +111,7 @@
     ]
   },
   "scripts": {
-    "vscode:prepublish": "npm run build:ui && npm run compile",
+    "vscode:prepublish": "npm run compile && npm run build:ui",
     "compile": "webpack --config webpack.config.cjs",
     "watch": "webpack --watch --config webpack.config.cjs",
     "package": "npm run build:ui && webpack --mode production --devtool hidden-source-map --config webpack.config.cjs",
@@ -119,9 +119,15 @@
     "watch-tests": "tsc -p . -w --outDir out",
     "pretest": "npm run compile-tests && npm run compile && npm run lint",
     "test": "vscode-test",
-    "build:ui": "cd src/cockpit-ui && npm run build",
+    "build:ui": "cd src/cockpit-ui && npm run build && shx cp -r build/* ../../dist/",
     "dev:ui": "cd src/cockpit-ui && npm run preview",
-    "dev": "concurrently \"npm run dev:ui\" \"npm run watch\""
+    "dev": "concurrently \"npm run dev:ui\" \"npm run watch\"",
+    "format": "prettier --write \"**/*.{ts,tsx,js,jsx,vue,json,md,yml,yaml,sol}\"",
+    "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,vue,json,md,yml,yaml,sol}\"",
+    "lint": "eslint \"**/*.{ts,tsx,js,jsx,vue}\"",
+    "lint:fix": "eslint \"**/*.{ts,tsx,js,jsx,vue}\" --fix",
+    "typecheck": "tsc --noEmit && cd src/cockpit-ui && npm run typecheck",
+    "check": "npm run format:check && npm run lint && npm run typecheck"
   },
   "devDependencies": {
     "@tomjs/vite-plugin-vscode": "^4.2.1",
@@ -142,6 +148,7 @@
     "eslint-config-prettier": "^9.0.0",
     "eslint-plugin-vue": "^9.17.0",
     "prettier": "^3.5.3",
+    "shx": "^0.4.0",
     "ts-loader": "^9.5.2",
     "typescript": "^5.8.2",
     "vite": "^6.3.3",
@@ -155,8 +162,6 @@
     "bufferutil": "^4.0.9",
     "dotenv": "^16.5.0",
     "glob": "^7.1.6",
-    "react": "^19.1.0",
-    "react-dom": "^19.1.0",
     "solc-typed-ast": "^18.2.5",
     "toml": "^3.0.0",
     "utf-8-validate": "^6.0.5",
