@@ -104,8 +104,6 @@ export class ForgeCockPitPanel {
 			<script nonce="${nonce}" type="module" src="${scriptUri}">
 			<script nonce="${nonce}">
 			const vscode = acquireVsCodeApi();
-			console.log("vscode: ",vscode)
-			vscode.postMessage('I am alive :XD')
 			</script> 
 			</script>
 			</body>
