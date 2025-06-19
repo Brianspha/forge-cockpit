@@ -405,7 +405,7 @@
         <div class="function-type">{{ props.function.stateMutability }}</div>
         <LoadingSpinner
           v-if="isExecuting"
-          size="tiny"
+          Resultssize="small"
           class="function-spinner"
         />
         <div v-else class="expand-icon">{{ isExpanded ? '−' : '+' }}</div>
@@ -485,7 +485,7 @@
               >
                 <LoadingSpinner
                   v-if="isFieldLoading(input.name || `param${index}`)"
-                  size="tiny"
+                  Resultssize="small"
                 />
                 <svg
                   v-else

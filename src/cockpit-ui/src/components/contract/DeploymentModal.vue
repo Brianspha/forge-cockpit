@@ -144,6 +144,7 @@
       msgSender: '',
       bytecode: props.contract.bytecode,
       abi: props.contract.abi,
+      functionName: '',
     } as DeployContract);
   };
 

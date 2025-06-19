@@ -114,6 +114,7 @@ export function validateAbiString(abiString: string): AbiValidationResponse {
 }
 
 export function readAbiFile(file: File, callback: (result: any) => void): void {
+  //@ts-ignore
   const reader = new FileReader();
 
   reader.onload = e => {

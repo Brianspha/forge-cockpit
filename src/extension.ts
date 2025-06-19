@@ -72,7 +72,7 @@ export async function activate(context: vscode.ExtensionContext) {
 				}
 			),
 			vscode.commands.registerCommand(ForgeCockpitCommand.ShowForgeCockPitCommand, (): void => {
-				initWebView(context, abiProvider.abis);
+				initWebView(context);
 				vscode.commands.executeCommand(ForgeCockpitCommand.PinEditorCommand);
 				vscode.commands.executeCommand(ForgeCockpitCommand.LoadCockPitWalletsCommand);
 			}),
@@ -276,8 +276,8 @@ export async function activate(context: vscode.ExtensionContext) {
 
 		vscode.window.showInformationMessage(`Forge Cockpit activated!`);
 	}
-}
 
-function initWebView(context: vscode.ExtensionContext, abis: TestFile[]): void {
-	ForgeCockPitPanel.render(context.extensionUri);
+	function initWebView(context: vscode.ExtensionContext): void {
+		ForgeCockPitPanel.render(context.extensionUri);
+	}
 }

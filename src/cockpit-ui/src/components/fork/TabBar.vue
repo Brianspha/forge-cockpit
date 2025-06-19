@@ -39,7 +39,7 @@
     >
       <div class="tab-content">
         <div v-if="tab.isLoading" class="tab-loading">
-          <LoadingSpinner size="tiny" />
+          <LoadingSpinner Resultssize="small" />
         </div>
         <div class="tab-title">{{ tab.title }}</div>
       </div>

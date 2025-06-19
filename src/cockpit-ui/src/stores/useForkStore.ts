@@ -228,7 +228,9 @@ export const useForkStore = defineStore('useForkStore', {
         }
 
         const data = await response.json();
+        //@ts-ignore
         if (data.abi) {
+          //@ts-ignore
           this.downloadedABI = JSON.stringify(data.abi, null, 2);
         } else {
           this.downloadABIError = 'No ABI found for this contract address';

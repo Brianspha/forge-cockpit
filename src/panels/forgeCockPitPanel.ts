@@ -47,7 +47,7 @@ export class ForgeCockPitPanel {
 				enableScripts: true,
 				localResourceRoots: [
 					Uri.joinPath(extensionUri, "out"),
-					Uri.joinPath(extensionUri, "webview-ui/build"),
+					Uri.joinPath(extensionUri, "src/cockpit-ui/build"),
 				],
 			});
 
@@ -82,20 +82,35 @@ export class ForgeCockPitPanel {
 			});
 		}
 
-		// Prod: load built assets
-		const stylesUri = getUri(webview, extensionUri, ["webview-ui", "build", "assets", "index.css"]);
-		const scriptUri = getUri(webview, extensionUri, ["webview-ui", "build", "assets", "index.js"]);
+		const styleUri = webview.asWebviewUri(
+			Uri.joinPath(extensionUri, "src/cockpit-ui", "build", "assets", "index.css")
+		);
+		const scriptUri = webview.asWebviewUri(
+			Uri.joinPath(extensionUri, "src/cockpit-ui", "build", "assets", "index.js")
+		);
 		const nonce = getNonce();
 
 		return `
-      <!DOCTYPE html><html lang="en"><head>
-        <meta charset="UTF-8" />
-        <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${webview.cspSource}; script-src 'nonce-${nonce}';" />
-        <link href="${stylesUri}" rel="stylesheet" />
-      </head><body>
-        <div id="app"></div>
-        <script nonce="${nonce}" type="module" src="${scriptUri}"></script>
-      </body></html>`;
+			<!DOCTYPE html>
+			<html lang="en">
+			<head>
+			<meta charset="UTF-8" />
+			<meta http-equiv="Content-Security-Policy"
+					content="default-src 'none'; style-src ${webview.cspSource} 'nonce-${nonce}'; script-src 'nonce-${nonce}';" />
+			<link href="${styleUri}" rel="stylesheet" nonce="${nonce}" />
+			</head>
+			<body>
+			<div id="app"></div>
+			<script nonce="${nonce}" type="module" src="${scriptUri}">
+			<script nonce="${nonce}">
+			const vscode = acquireVsCodeApi();
+			console.log("vscode: ",vscode)
+			vscode.postMessage('I am alive :XD')
+			</script> 
+			</script>
+			</body>
+			</html>
+`;
 	}
 
 	private _setWebviewMessageListener(webview: Webview) {

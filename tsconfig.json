@@ -3,7 +3,7 @@
     "module": "CommonJS",
     "target": "ES2020",
     "outDir": "out",
-    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    "lib": ["ES2020"],
     "sourceMap": true,
     "rootDir": "src",
     "strict": false,
@@ -14,8 +14,7 @@
     "esModuleInterop": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
-    "moduleResolution": "node",
-    "allowJs": true
+    "moduleResolution": "node"
   },
   "include": ["src/**/*"],
   "exclude": [

@@ -5,7 +5,7 @@
   "scripts": {
     "start": "vite",
     "build": "vue-tsc --noEmit && vite build",
-    "preview": "vite preview --port 5050",
+    "preview": "vite preview --port 5000",
     "typecheck": "vue-tsc --noEmit",
     "format": "prettier --write \"src/**/*.{ts,vue,js,json,css,scss}\"",
     "format:check": "prettier --check \"src/**/*.{ts,vue,js,json,css,scss}\"",
@@ -14,30 +14,33 @@
     "check": "npm run typecheck && npm run lint"
   },
   "dependencies": {
-    "@vscode/webview-ui-toolkit": "^1.2.2",
+    "@tomjs/vscode-webview": "^2.0.2",
+    "@tomjs/vscode-extension-webview": "^2.0.0",
+    "@vscode/webview-ui-toolkit": "^1.4.0",
     "@vueuse/core": "^13.1.0",
     "clipboard": "^2.0.11",
     "pinia": "^3.0.2",
     "pinia-plugin-persistedstate": "^4.3.0",
     "uuid": "^11.1.0",
-    "vue": "^3.2.33",
+    "vue": "^3.5.0",
     "vue-clipboard2": "^0.3.3"
   },
   "devDependencies": {
-    "@types/node": "^16.11.27",
+    "@tomjs/vite-plugin-vscode": "^4.2.1",
+    "@types/node": "^20.0.0",
     "@types/vscode-webview": "^1.57.0",
-    "@vitejs/plugin-vue": "^2.3.1",
-    "@vue/tsconfig": "^0.1.3",
-    "typescript": "~4.6.3",
-    "vite": "^2.9.13",
-    "vite-plugin-vscode-webview-hmr": "^1.0.1",
-    "vue-tsc": "^0.34.7",
-    "@typescript-eslint/eslint-plugin": "^6.0.0",
-    "@typescript-eslint/parser": "^6.0.0",
-    "@vue/eslint-config-typescript": "^12.0.0",
-    "eslint": "^8.50.0",
+    "@typescript-eslint/eslint-plugin": "^8.28.0",
+    "@typescript-eslint/parser": "^8.28.0",
+    "@vitejs/plugin-vue": "^5.0.0",
+    "@vue/eslint-config-typescript": "^14.0.0",
+    "@vue/tsconfig": "^0.7.0",
+    "eslint": "^9.23.0",
     "eslint-config-prettier": "^9.0.0",
     "eslint-plugin-vue": "^9.17.0",
-    "prettier": "^3.0.0"
+    "prettier": "^3.5.3",
+    "typescript": "^5.8.2",
+    "vite": "^6.0.0",
+    "vite-plugin-vscode-webview-hmr": "^1.0.1",
+    "vue-tsc": "^2.0.0"
   }
 }
