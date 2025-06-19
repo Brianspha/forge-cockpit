@@ -14,9 +14,8 @@
     "check": "npm run typecheck && npm run lint"
   },
   "dependencies": {
-    "@tomjs/vscode-webview": "^2.0.2",
     "@tomjs/vscode-extension-webview": "^2.0.0",
-    "@vscode/webview-ui-toolkit": "^1.4.0",
+    "@tomjs/vscode-webview": "^2.0.2",
     "@vueuse/core": "^13.1.0",
     "clipboard": "^2.0.11",
     "pinia": "^3.0.2",
@@ -38,6 +37,7 @@
     "eslint-config-prettier": "^9.0.0",
     "eslint-plugin-vue": "^9.17.0",
     "prettier": "^3.5.3",
+    "shx": "^0.4.0",
     "typescript": "^5.8.2",
     "vite": "^6.0.0",
     "vite-plugin-vscode-webview-hmr": "^1.0.1",

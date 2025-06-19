@@ -45,10 +45,7 @@ export class ForgeCockPitPanel {
 			const panel = window.createWebviewPanel("showForgeCockPit", "Forge CockPit", ViewColumn.One, {
 				retainContextWhenHidden: true,
 				enableScripts: true,
-				localResourceRoots: [
-					Uri.joinPath(extensionUri, "out"),
-					Uri.joinPath(extensionUri, "src/cockpit-ui/build"),
-				],
+				localResourceRoots: [Uri.joinPath(extensionUri, "out"), Uri.joinPath(extensionUri, "dist")],
 			});
 
 			ForgeCockPitPanel.currentPanel = new ForgeCockPitPanel(panel, extensionUri);
@@ -83,10 +80,10 @@ export class ForgeCockPitPanel {
 		}
 
 		const styleUri = webview.asWebviewUri(
-			Uri.joinPath(extensionUri, "src/cockpit-ui", "build", "assets", "index.css")
+			Uri.joinPath(extensionUri, "dist", "assets", "index.css")
 		);
 		const scriptUri = webview.asWebviewUri(
-			Uri.joinPath(extensionUri, "src/cockpit-ui", "build", "assets", "index.js")
+			Uri.joinPath(extensionUri, "dist", "assets", "index.js")
 		);
 		const nonce = getNonce();
 
