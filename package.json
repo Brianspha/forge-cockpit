@@ -10,7 +10,7 @@
     "url": "https://github.com/brianspha/forge-cockpit.git",
     "directory": ""
   },
-  "version": "1.3.0",
+  "version": "1.4.0",
   "engines": {
     "vscode": "^1.99.0"
   },
@@ -158,7 +158,6 @@
   "dependencies": {
     "@solidity-parser/parser": "^0.20.1",
     "@tomjs/vscode-extension-webview": "^2.0.0",
-    "@vscode/webview-ui-toolkit": "^1.4.0",
     "bufferutil": "^4.0.9",
     "dotenv": "^16.5.0",
     "glob": "^7.1.6",
