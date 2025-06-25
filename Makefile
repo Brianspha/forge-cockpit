@@ -109,7 +109,7 @@ release-minor: bump-minor push publish-vsce release-github
 
 release-major: bump-major push publish-vsce release-github
 
-release: release-minor
+release: release-patch
 
 dev-setup: install
 
