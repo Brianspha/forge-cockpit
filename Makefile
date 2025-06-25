@@ -12,8 +12,10 @@ format:
 	cd src/cockpit-ui && npx prettier --write $(PRETTIER_FILES)
 
 format-check:
-	npx prettier --check $(PRETTIER_FILES)
-	cd src/cockpit-ui && npx prettier --check $(PRETTIER_FILES)
+	@echo "Checking code formatting..."
+	@npx prettier --check $(PRETTIER_FILES) --list-different || (echo "Files with formatting issues above ↑" && exit 1)
+	@cd src/cockpit-ui && npx prettier --check $(PRETTIER_FILES) --list-different || (echo "Files with formatting issues in cockpit-ui above ↑" && exit 1)
+	@echo "All files are properly formatted!"
 
 lint:
 	npx eslint $(ESLINT_FILES)
