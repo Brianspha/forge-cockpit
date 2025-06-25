@@ -1,4 +1,4 @@
-.PHONY: format lint lint-fix check install clean build watch test package typecheck package-ext publish-ext bump-version push release-github publish-vsce release
+.PHONY: format lint lint-fix check install clean build watch test package typecheck package-ext publish-ext bump-patch bump-minor bump-major push release-github publish-vsce release-patch release-minor release-major release
 
 PRETTIER_FILES = "**/*.{ts,tsx,js,jsx,vue,json,md,yml,yaml,sol}"
 ESLINT_FILES = "**/*.{ts,tsx,js,jsx,vue}"
@@ -49,11 +49,31 @@ clean:
 	rm -rf *.vsix
 	cd src/cockpit-ui && rm -rf node_modules dist build
 
-bump-version:
-	npm version minor --no-git-tag-version
-	$(eval NEW_VERSION := $(shell node -p "require('./package.json').version"))
-	git add package.json package-lock.json
+bump-patch:
+	$(eval CURRENT_VERSION := $(shell node -p "require('./package.json').version"))
+	$(eval NEW_VERSION := $(shell node -e "const semver = require('semver'); console.log(semver.inc('$(CURRENT_VERSION)', 'patch'))"))
+	npm version $(NEW_VERSION) --no-git-tag-version --allow-same-version
+	cd src/cockpit-ui && npm version $(NEW_VERSION) --no-git-tag-version --allow-same-version
+	git add .
 	git commit -m "chore: bump version to v$(NEW_VERSION)"
+
+bump-minor:
+	$(eval CURRENT_VERSION := $(shell node -p "require('./package.json').version"))
+	$(eval NEW_VERSION := $(shell node -e "const semver = require('semver'); console.log(semver.inc('$(CURRENT_VERSION)', 'minor'))"))
+	npm version $(NEW_VERSION) --no-git-tag-version --allow-same-version
+	cd src/cockpit-ui && npm version $(NEW_VERSION) --no-git-tag-version --allow-same-version
+	git add .
+	git commit -m "chore: bump version to v$(NEW_VERSION)"
+
+bump-major:
+	$(eval CURRENT_VERSION := $(shell node -p "require('./package.json').version"))
+	$(eval NEW_VERSION := $(shell node -e "const semver = require('semver'); console.log(semver.inc('$(CURRENT_VERSION)', 'major'))"))
+	npm version $(NEW_VERSION) --no-git-tag-version --allow-same-version
+	cd src/cockpit-ui && npm version $(NEW_VERSION) --no-git-tag-version --allow-same-version
+	git add .
+	git commit -m "chore: bump version to v$(NEW_VERSION)"
+
+bump-version: bump-minor
 
 push:
 	$(eval CURRENT_VERSION := $(shell node -p "require('./package.json').version"))
@@ -72,7 +92,13 @@ publish-vsce: build
 
 publish-ext: publish-vsce
 
-release: bump-version push publish-vsce release-github
+release-patch: bump-patch push publish-vsce release-github
+
+release-minor: bump-minor push publish-vsce release-github
+
+release-major: bump-major push publish-vsce release-github
+
+release: release-minor
 
 dev-setup: install
 

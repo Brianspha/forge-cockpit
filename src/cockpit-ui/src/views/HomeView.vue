@@ -48,7 +48,6 @@
   } from '../utils';
   import { useAppStore } from '../stores/useAppstore';
   import { useContractStore } from '../stores/useContractStore';
-  import { vscode } from '../utils/vscode';
 
   const latestMessage = inject<Ref<any>>('latestMessage');
   const showForkInterface = ref(false);
@@ -1181,7 +1180,7 @@
   .tab-button.active {
     background-color: var(--vscode-tab-activeBackground, var(--selected-bg));
     color: var(--vscode-tab-activeForeground, var(--selected-text));
-    border-bottom-color: var(--vscode-tab-activeBorder, var(--primary-color));
+    border-bottom-color: var(--vscode-input-border, var(--border-color));
   }
 
   .tab-button:disabled {
@@ -1304,7 +1303,7 @@
   .raw-abi {
     position: relative;
     background-color: var(--vscode-editor-background);
-    border: 1px solid var(--vscode-input-border, var(--border-color));
+    border: 1px solid transparent;
     border-radius: var(--border-radius);
     padding: var(--space-md);
     overflow: auto;
