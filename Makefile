@@ -13,21 +13,30 @@ format:
 
 format-check:
 	@echo "Checking code formatting..."
-	@npx prettier --check $(PRETTIER_FILES) || (echo "Files with formatting issues above ↑" && exit 1)
-	@cd src/cockpit-ui && npx prettier --check $(PRETTIER_FILES)  || (echo "Files with formatting issues in cockpit-ui above ↑" && exit 1)
+	@echo "Root directory:"
+	npx prettier --list-different $(PRETTIER_FILES) || (echo "Files above need formatting. Run 'make format' to fix." && exit 1)
+	@echo "Cockpit UI directory:"
+	cd src/cockpit-ui && npx prettier --list-different $(PRETTIER_FILES) || (echo "Files above need formatting. Run 'make format' to fix." && exit 1)
 	@echo "All files are properly formatted!"
 
 lint:
-	npx eslint $(ESLINT_FILES)
-	cd src/cockpit-ui && npx eslint $(ESLINT_FILES)
+	@echo "Running ESLint on root directory..."
+	npx eslint $(ESLINT_FILES) || (echo "Linting errors found above. Run 'make lint-fix' to auto-fix some issues." && exit 1)
+	@echo "Running ESLint on cockpit-ui directory..."
+	cd src/cockpit-ui && npx eslint $(ESLINT_FILES) || (echo "Linting errors found above. Run 'make lint-fix' to auto-fix some issues." && exit 1)
+	@echo "All files pass linting!"
 
 lint-fix:
+	@echo "Auto-fixing linting issues..."
 	npx eslint $(ESLINT_FILES) --fix
 	cd src/cockpit-ui && npx eslint $(ESLINT_FILES) --fix
+	@echo "Auto-fix complete. Check remaining issues with 'make lint'"
 
 typecheck:
-	npx tsc --noEmit
-	cd src/cockpit-ui && npm run typecheck
+	@echo "Running TypeScript type checking..."
+	npx tsc --noEmit || (echo "TypeScript errors found above. Fix type errors before proceeding." && exit 1)
+	cd src/cockpit-ui && npm run typecheck || (echo "TypeScript errors found in cockpit-ui above." && exit 1)
+	@echo "All TypeScript checks passed!"
 
 check: format-check lint typecheck
 
