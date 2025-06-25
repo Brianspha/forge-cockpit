@@ -6,7 +6,6 @@ import { TestCodeLensProvider } from "./providers/codeLensProvider";
 import { TestDecorationProvider } from "./providers/testCodeDecoProvider";
 import { FoundryProjectController } from "./controllers/forgeProjectController";
 import {
-	AbiInputData,
 	DeployContract,
 	DeployedContract,
 	ForkInfo,
@@ -232,6 +231,9 @@ export async function activate(context: vscode.ExtensionContext) {
 					logger.logToOutput("Cleared Cache");
 				}
 			),
+			vscode.commands.registerCommand("forge-cockpit.log", async (html: any): Promise<void> => {
+				logger.logToOutput(`HTML: ${html}`);
+			}),
 			vscode.commands.registerCommand(
 				ForgeCockpitCommand.RunScriptCommand,
 				async (config: DeployContract): Promise<any> => {

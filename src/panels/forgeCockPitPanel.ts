@@ -30,6 +30,7 @@ import {
 	ClipBoardTypeCommand,
 	WebviewCommand,
 } from "../utils";
+import { getNonce } from "../utils/getNonce";
 
 export class ForgeCockPitPanel {
 	public static currentPanel: ForgeCockPitPanel | undefined;
@@ -56,6 +57,8 @@ export class ForgeCockPitPanel {
 				localResourceRoots: [
 					Uri.joinPath(context.extensionUri, "out"),
 					Uri.joinPath(context.extensionUri, "dist"),
+					Uri.joinPath(context.extensionUri, "src/cockpit-ui/build"),
+					Uri.joinPath(context.extensionUri, "src/cockpit-ui/dist-extension"),
 				],
 			});
 
@@ -83,12 +86,42 @@ export class ForgeCockPitPanel {
 	}
 
 	private _getWebviewContent(webview: Webview, context: ExtensionContext): string {
-		return __getWebviewHtml__({
-			serverUrl: process.env.VITE_DEV_SERVER_URL,
-			webview,
-			context,
-			injectCode: `<script>window.__FLAG1__=666;window.__FLAG2__=888;</script>`,
-		});
+		if (process.env.VITE_DEV_SERVER_URL) {
+			return __getWebviewHtml__({
+				serverUrl: process.env.VITE_DEV_SERVER_URL,
+				webview,
+				context,
+				injectCode: `<script>window.__FLAG1__=666;window.__FLAG2__=888;</script>`,
+			});
+		}
+		const styleUri = webview.asWebviewUri(
+			Uri.joinPath(context.extensionUri, "src/cockpit-ui", "build", "assets", "index.css")
+		);
+		const scriptUri = webview.asWebviewUri(
+			Uri.joinPath(context.extensionUri, "src/cockpit-ui", "build", "assets", "index.js")
+		);
+		const nonce = getNonce();
+
+		const html = `
+			<!DOCTYPE html>
+			<html lang="en">
+			<head>
+			<meta charset="UTF-8" />
+			<meta http-equiv="Content-Security-Policy"
+					content="default-src 'none'; style-src ${webview.cspSource} 'nonce-${nonce}'; script-src 'nonce-${nonce}';" />
+			<link href="${styleUri}" rel="stylesheet" nonce="${nonce}" />
+			</head>
+			<body>
+			<div id="app"></div>
+			<script nonce="${nonce}" type="module" src="${scriptUri}">
+			<script nonce="${nonce}">
+			</script> 
+			</script>
+			</body>
+			</html>
+			`;
+		commands.executeCommand("forge-cockpit.log", html);
+		return html;
 	}
 
 	private _setWebviewMessageListener(webview: Webview) {

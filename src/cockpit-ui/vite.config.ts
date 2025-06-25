@@ -29,7 +29,7 @@ export default defineConfig(({ command }) => {
     define: {
       __IS_WEBVIEW_PROD__: JSON.stringify(!isDev),
       'process.env.VITE_DEV_SERVER_URL': JSON.stringify(
-        isDev ? 'http://localhost:5000' : ''
+        isDev ? 'http://localhost:5000' : undefined
       ),
     },
     server: {
