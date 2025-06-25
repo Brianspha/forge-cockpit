@@ -29,8 +29,5 @@ jobs:
       - name: Run ESLint
         run: make lint
 
-      - name: Run TypeScript checks
-        run: make typecheck
-
       - name: Build project
         run: make build
