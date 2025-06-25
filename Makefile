@@ -1,7 +1,7 @@
 .PHONY: format lint lint-fix check install clean build watch test package typecheck package-ext publish-ext bump-patch bump-minor bump-major push release-github publish-vsce release-patch release-minor release-major release
 
 PRETTIER_FILES = "**/*.{ts,tsx,js,jsx,vue,md,yml,yaml,sol}" "**/*.json" "!**/package-lock.json" "!**/yarn.lock" "!**/pnpm-lock.yaml"
-ESLINT_FILES = "**/*.{ts,tsx,js,jsx,vue,yml,yaml,json,sol}" "!**/package-lock.json"
+ESLINT_FILES = "**/*.{ts,tsx,js,jsx,vue,yml,yaml,json,sol}"
 
 install:
 	npm install --legacy-peer-deps
