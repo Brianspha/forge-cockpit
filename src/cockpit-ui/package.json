@@ -1,6 +1,6 @@
 {
   "name": "forge-cockpit-ui",
-  "version": "0.0.1",
+  "version": "1.7.1",
   "private": true,
   "main": "src/main.ts",
   "scripts": {
@@ -15,6 +15,7 @@
     "check": "npm run typecheck && npm run lint"
   },
   "dependencies": {
+    "@tomjs/vite-plugin-vscode": "^4.2.1",
     "@tomjs/vscode-extension-webview": "^2.0.0",
     "@tomjs/vscode-webview": "^2.0.2",
     "@vueuse/core": "^13.1.0",
@@ -26,12 +27,11 @@
     "vue-clipboard2": "^0.3.3"
   },
   "devDependencies": {
-    "@tomjs/vite-plugin-vscode": "^4.2.1",
     "@types/node": "^20.0.0",
     "@types/vscode-webview": "^1.57.0",
     "@typescript-eslint/eslint-plugin": "^8.28.0",
     "@typescript-eslint/parser": "^8.28.0",
-    "@vitejs/plugin-vue": "^5.0.0",
+    "@vitejs/plugin-vue": "^5.2.4",
     "@vue/eslint-config-typescript": "^14.0.0",
     "@vue/tsconfig": "^0.7.0",
     "eslint": "^9.23.0",
@@ -39,7 +39,7 @@
     "eslint-plugin-vue": "^9.17.0",
     "prettier": "^3.5.3",
     "shx": "^0.4.0",
-    "typescript": "^5.8.2",
+    "typescript": "^5.8.3",
     "vite": "^6.0.0",
     "vite-plugin-vscode-webview-hmr": "^1.0.1",
     "vue-tsc": "^2.0.0"
