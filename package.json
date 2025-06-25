@@ -130,7 +130,6 @@
     "check": "npm run format:check && npm run lint && npm run typecheck"
   },
   "devDependencies": {
-    "@tomjs/vite-plugin-vscode": "^4.2.1",
     "@types/glob": "^7.1.3",
     "@types/json-bigint": "^1.0.4",
     "@types/mocha": "^10.0.10",
@@ -157,6 +156,7 @@
     "webpack-cli": "^6.0.1"
   },
   "dependencies": {
+    "@tomjs/vite-plugin-vscode": "^4.2.1",
     "@solidity-parser/parser": "^0.20.1",
     "@tomjs/vscode-extension-webview": "^2.0.0",
     "bufferutil": "^4.0.9",
