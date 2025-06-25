@@ -120,7 +120,7 @@
     "pretest": "npm run compile-tests && npm run compile && npm run lint",
     "test": "vscode-test",
     "build:ui": "cd src/cockpit-ui && npm run build && shx cp -r build/* ../../dist/",
-    "dev:ui": "cd src/cockpit-ui && npm run start",
+    "dev:ui": "cd src/cockpit-ui && npm run preview",
     "dev": "concurrently \"npm run dev:ui\" \"npm run watch\"",
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,vue,json,md,yml,yaml,sol}\"",
     "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,vue,json,md,yml,yaml,sol}\"",

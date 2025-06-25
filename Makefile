@@ -103,11 +103,11 @@ publish-vsce: build
 
 publish-ext: publish-vsce
 
-release-patch: bump-patch push publish-vsce release-github
+release-patch: clean install bump-patch push publish-vsce release-github
 
-release-minor: bump-minor push publish-vsce release-github
+release-minor: clean install bump-minor push publish-vsce release-github
 
-release-major: bump-major push publish-vsce release-github
+release-major: clean install bump-major push publish-vsce release-github
 
 release: release-patch
 
