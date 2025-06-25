@@ -278,6 +278,6 @@ export async function activate(context: vscode.ExtensionContext) {
 	}
 
 	function initWebView(context: vscode.ExtensionContext): void {
-		ForgeCockPitPanel.render(context.extensionUri);
+		ForgeCockPitPanel.render(context);
 	}
 }

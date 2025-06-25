@@ -20,6 +20,9 @@ class VSCodeAPIWrapper {
     if (typeof acquireVsCodeApi === 'function') {
       this.vsCodeApi = acquireVsCodeApi();
     }
+    console.log(
+      `VSCodeAPIWrapper initialized. Webview production mode: ${typeof acquireVsCodeApi}`
+    );
   }
 
   /**

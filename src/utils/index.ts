@@ -1,5 +1,6 @@
 import { encodeFunctionData } from "viem";
 import { AbiInputData, Account, EncodeResponse } from "../types";
+import * as vscode from "vscode";
 
 export const ALREADY_PINNED_KEY = "FORGE_COCKPIT_ALREADY_PINNED";
 export const ACTIVE_NODE_KEY = "FORGE_COCKPIT_ACTIVE_NODES";
@@ -306,5 +307,15 @@ export function encodeFunction(input: AbiInputData): EncodeResponse {
 			error: (error as Error).toString(),
 			functionName: input.functionName,
 		} as EncodeResponse;
+	}
+}
+
+export async function fileExists(uri: vscode.Uri): Promise<boolean> {
+	try {
+		await vscode.workspace.fs.stat(uri);
+		return true;
+	} catch (err: any) {
+		// We dont care about the specific error, just that it exists or not
+		return false;
 	}
 }

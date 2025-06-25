@@ -172,6 +172,7 @@
         <h2 class="contract-title">
           {{ contractName }}
           <span v-if="deploymentInfo" class="deployed-badge">Deployed</span>
+          <span v-else class="contract-badge">Contract</span>
         </h2>
 
         <div v-if="deploymentInfo" class="address-container">
@@ -404,6 +405,27 @@
     text-transform: uppercase;
   }
 
+  .contract-badge {
+    background-color: var(
+      --vscode-button-background,
+      var(--primary-color, #0078d4)
+    );
+    color: var(--vscode-button-foreground, white);
+    border-color: var(
+      --vscode-button-background,
+      var(--primary-color, #0078d4)
+    );
+    font-size: 12px;
+
+    border-radius: 6px;
+    padding: 4px 8px;
+    border-radius: 16px;
+    font-weight: 500;
+    letter-spacing: 0.02em;
+    box-shadow: 0 2px 4px rgba(16, 185, 129, 0.2);
+    text-transform: uppercase;
+  }
+
   .address-container {
     margin-top: 8px;
     position: relative;
@@ -412,17 +434,17 @@
   .address-display {
     display: flex;
     align-items: center;
-    background-color: var(--panel-bg);
+    background-color: var(--vscode-input-background, var(--panel-bg));
     padding: 8px 12px;
     border-radius: 6px;
-    border: 1px solid var(--border-color);
+    border: 1px solid var(--vscode-input-border, var(--border-color));
     transition: all 0.2s ease;
     cursor: pointer;
     max-width: fit-content;
   }
 
   .address-display:hover {
-    border-color: var(--primary-color);
+    border-color: var(--vscode-focusBorder, var(--primary-color));
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
   }
 
@@ -439,6 +461,7 @@
     text-overflow: ellipsis;
     max-width: 280px;
     padding-right: 8px;
+    color: var(--vscode-editor-foreground, var(--text-color));
   }
 
   .copy-address-btn {
@@ -450,14 +473,14 @@
     padding: 4px;
     margin-left: 4px;
     border-radius: 4px;
-    color: var(--text-color);
+    color: var(--vscode-foreground, var(--text-color));
     cursor: pointer;
     transition: all 0.2s ease;
   }
 
   .copy-address-btn:hover {
-    background-color: var(--hover-bg);
-    color: var(--primary-color);
+    background-color: var(--vscode-toolbar-hoverBackground, var(--hover-bg));
+    color: var(--vscode-focusBorder, var(--primary-color));
   }
 
   .copy-tooltip {
@@ -465,8 +488,11 @@
     bottom: -28px;
     left: 50%;
     transform: translateX(-50%) translateY(4px);
-    background-color: var(--panel-bg);
-    color: var(--text-color);
+    background-color: var(
+      --vscode-editorHoverWidget-background,
+      var(--panel-bg)
+    );
+    color: var(--vscode-editorHoverWidget-foreground, var(--text-color));
     padding: 4px 8px;
     border-radius: 4px;
     font-size: 12px;
@@ -474,7 +500,8 @@
     transition: all 0.2s ease;
     pointer-events: none;
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
-    border: 1px solid var(--border-color);
+    border: 1px solid
+      var(--vscode-editorHoverWidget-border, var(--border-color));
   }
 
   .network-row {
@@ -490,6 +517,7 @@
 
   .network-label {
     font-weight: 500;
+    color: var(--vscode-foreground, var(--text-color));
   }
 
   .network-selector-container {
@@ -506,7 +534,7 @@
     align-items: center;
     justify-content: space-between;
     padding: 8px 12px;
-    border: 1px solid var(--border-color);
+    border: 1px solid var(--vscode-dropdown-border, var(--border-color));
     border-radius: 6px;
     background-color: var(--vscode-dropdown-background);
     color: var(--vscode-dropdown-foreground);
@@ -518,17 +546,20 @@
 
   .dropdown-button:focus {
     outline: none;
-    border-color: var(--primary-color);
+    border-color: var(--vscode-focusBorder, var(--primary-color));
     box-shadow: 0 0 0 2px rgba(var(--primary-color-rgb, 0, 120, 212), 0.25);
   }
 
   .dropdown-button:disabled {
     opacity: 0.7;
     cursor: not-allowed;
+    background-color: var(--vscode-input-background, transparent);
+    color: var(--vscode-disabledForeground, inherit);
   }
 
   .dropdown-arrow {
     transition: transform 0.2s ease;
+    color: var(--vscode-foreground, currentColor);
   }
 
   .custom-dropdown.open .dropdown-arrow {
@@ -541,7 +572,7 @@
     left: 0;
     right: 0;
     background-color: var(--vscode-dropdown-background);
-    border: 1px solid var(--border-color);
+    border: 1px solid var(--vscode-dropdown-border, var(--border-color));
     border-radius: 6px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
     z-index: 1000;
@@ -558,6 +589,7 @@
     cursor: pointer;
     transition: background-color 0.2s ease;
     font-size: 14px;
+    color: var(--vscode-dropdown-foreground);
   }
 
   .dropdown-item:hover:not(.disabled) {
@@ -572,6 +604,7 @@
   .dropdown-item.disabled {
     opacity: 0.7;
     cursor: not-allowed;
+    color: var(--vscode-disabledForeground);
   }
 
   .network-url {
@@ -603,10 +636,10 @@
     align-items: center;
     gap: 6px;
     padding: 8px 12px;
-    border: 1px solid var(--primary-color);
+    border: 1px solid var(--vscode-button-background, var(--primary-color));
     border-radius: 6px;
-    background-color: var(--primary-color);
-    color: white;
+    background-color: var(--vscode-button-background, var(--primary-color));
+    color: var(--vscode-button-foreground, white);
     font-size: 14px;
     font-weight: 500;
     cursor: pointer;
@@ -614,7 +647,10 @@
   }
 
   .create-network-button:hover {
-    background-color: var(--primary-hover);
+    background-color: var(
+      --vscode-button-hoverBackground,
+      var(--primary-hover)
+    );
     transform: translateY(-1px);
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
   }
@@ -624,8 +660,8 @@
   }
 
   .deployment-notice {
-    background-color: var(--panel-bg);
-    border: 1px solid var(--border-color);
+    background-color: var(--vscode-editor-background, var(--panel-bg));
+    border: 1px solid var(--vscode-panel-border, var(--border-color));
     border-radius: 6px;
     padding: 12px 16px;
     margin-bottom: 20px;
@@ -640,13 +676,13 @@
   }
 
   .notice-message svg {
-    color: #f59e0b;
+    color: var(--vscode-notificationsWarningIcon-foreground, #f59e0b);
     flex-shrink: 0;
   }
 
   .tab-navigation {
     display: flex;
-    border-bottom: 1px solid var(--border-color);
+    border-bottom: 1px solid var(--vscode-tab-border, var(--border-color));
     margin-bottom: 16px;
   }
 
@@ -657,7 +693,7 @@
     border-bottom: 2px solid transparent;
     cursor: pointer;
     font-size: 14px;
-    color: var(--text-color);
+    color: var(--vscode-tab-inactiveForeground, var(--text-color));
     transition: all 0.2s ease;
     font-weight: 500;
     display: flex;
@@ -666,19 +702,20 @@
   }
 
   .tab-button:hover {
-    background-color: var(--hover-bg);
-    color: var(--primary-color);
+    background-color: var(--vscode-tab-hoverBackground, var(--hover-bg));
+    color: var(--vscode-tab-activeForeground, var(--primary-color));
   }
 
   .tab-button.active {
-    border-bottom-color: var(--primary-color);
-    color: var(--primary-color);
+    border-bottom-color: var(--vscode-tab-activeBorder, var(--primary-color));
+    color: var(--vscode-tab-activeForeground, var(--primary-color));
     font-weight: 600;
+    background-color: var(--vscode-tab-activeBackground, transparent);
   }
 
   .event-count {
-    background: var(--primary-color);
-    color: white;
+    background: var(--vscode-badge-background, var(--primary-color));
+    color: var(--vscode-badge-foreground, white);
     padding: 2px 6px;
     border-radius: 10px;
     font-size: 10px;

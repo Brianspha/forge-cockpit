@@ -516,6 +516,8 @@
     max-width: 800px;
     margin: 0 auto;
     padding: 1.5rem;
+    background-color: var(--vscode-editor-background);
+    color: var(--vscode-foreground);
   }
 
   .section-title {
@@ -600,6 +602,14 @@
   .text-area:focus {
     outline: none;
     border-color: var(--vscode-focusBorder);
+    box-shadow: 0 0 0 1px var(--vscode-focusBorder);
+  }
+
+  .text-area:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    background-color: var(--vscode-input-background);
+    color: var(--vscode-disabledForeground);
   }
 
   .abi-actions {
@@ -611,6 +621,7 @@
     flex: 1;
     background-color: var(--vscode-button-background);
     color: var(--vscode-button-foreground);
+    border: 1px solid transparent;
   }
 
   .clipboard-button:hover:not(:disabled) {
@@ -643,23 +654,35 @@
   .text-input.with-button:focus {
     outline: none;
     border-color: var(--vscode-focusBorder);
+    box-shadow: 0 0 0 1px var(--vscode-focusBorder);
+  }
+
+  .text-input.with-button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    background-color: var(--vscode-input-background);
+    color: var(--vscode-disabledForeground);
   }
 
   .text-input.input-error {
-    border-color: #f56565;
-    box-shadow: 0 0 0 1px #f56565;
-    background-color: rgba(245, 101, 101, 0.05);
+    border-color: var(--vscode-inputValidation-errorBorder, #f56565);
+    box-shadow: 0 0 0 1px var(--vscode-inputValidation-errorBorder, #f56565);
+    background-color: var(
+      --vscode-inputValidation-errorBackground,
+      rgba(245, 101, 101, 0.05)
+    );
   }
 
   .text-input.input-error:focus {
-    border-color: #f56565;
-    box-shadow: 0 0 0 2px rgba(245, 101, 101, 0.2);
+    border-color: var(--vscode-inputValidation-errorBorder, #f56565);
+    box-shadow: 0 0 0 2px
+      var(--vscode-inputValidation-errorBorder, rgba(245, 101, 101, 0.2));
   }
 
   .input-error-message {
     margin-top: 0.25rem;
     font-size: 0.8rem;
-    color: #f56565;
+    color: var(--vscode-inputValidation-errorForeground, #f56565);
     display: flex;
     align-items: center;
     gap: 0.25rem;
@@ -700,8 +723,9 @@
   }
 
   .embedded-paste-button:disabled {
-    opacity: 0.5;
+    opacity: 0.4;
     cursor: not-allowed;
+    color: var(--vscode-disabledForeground);
   }
 
   .action-button {
@@ -711,7 +735,7 @@
     font-size: 0.9rem;
     font-weight: 500;
     cursor: pointer;
-    border: none;
+    border: 1px solid transparent;
     transition: all 0.2s;
     display: flex;
     align-items: center;
@@ -732,6 +756,7 @@
   .copy-button {
     background-color: var(--vscode-button-secondaryBackground);
     color: var(--vscode-button-secondaryForeground);
+    border: 1px solid transparent;
   }
 
   .action-button:hover:not(:disabled) {
@@ -740,6 +765,13 @@
 
   .copy-button:hover:not(:disabled) {
     background-color: var(--vscode-button-secondaryHoverBackground);
+  }
+
+  .action-button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    background-color: var(--vscode-input-background);
+    color: var(--vscode-disabledForeground);
   }
 
   .button-content {
@@ -755,7 +787,7 @@
   .button-spinner {
     width: 16px;
     height: 16px;
-    border: 2px solid rgba(255, 255, 255, 0.3);
+    border: 2px solid var(--vscode-foreground, rgba(255, 255, 255, 0.3));
     border-top-color: currentColor;
     border-radius: 50%;
     animation: spin 1s linear infinite;
@@ -828,6 +860,7 @@
     cursor: pointer;
     transition: background-color 0.2s;
     border-bottom: 1px solid transparent;
+    background-color: var(--vscode-editor-background);
   }
 
   .function-header:hover {
@@ -852,22 +885,35 @@
     font-size: 0.8rem;
     font-weight: 500;
     text-transform: lowercase;
+    border: 1px solid var(--vscode-contrastBorder, transparent);
   }
 
   .type-view,
   .type-pure {
-    background-color: rgba(34, 197, 94, 0.15);
-    color: rgb(34, 197, 94);
+    background-color: var(
+      --vscode-gitDecoration-addedResourceForeground,
+      rgba(34, 197, 94, 0.15)
+    );
+    color: var(
+      --vscode-gitDecoration-addedResourceForeground,
+      rgb(34, 197, 94)
+    );
   }
 
   .type-nonpayable {
-    background-color: rgba(59, 130, 246, 0.15);
-    color: rgb(59, 130, 246);
+    background-color: var(
+      --vscode-textLink-foreground,
+      rgba(59, 130, 246, 0.15)
+    );
+    color: var(--vscode-textLink-foreground, rgb(59, 130, 246));
   }
 
   .type-payable {
-    background-color: rgba(245, 158, 11, 0.15);
-    color: rgb(245, 158, 11);
+    background-color: var(
+      --vscode-notificationsWarningIcon-foreground,
+      rgba(245, 158, 11, 0.15)
+    );
+    color: var(--vscode-notificationsWarningIcon-foreground, rgb(245, 158, 11));
   }
 
   .expand-icon {
@@ -881,6 +927,7 @@
     padding: 1.5rem;
     border-top: 1px solid var(--vscode-widget-border);
     animation: slideDown 0.2s ease;
+    background-color: var(--vscode-editor-background);
   }
 
   .function-signature {
@@ -910,8 +957,11 @@
   }
 
   .result-container.result-error {
-    border-color: #f56565;
-    background-color: rgba(245, 101, 101, 0.05);
+    border-color: var(--vscode-inputValidation-errorBorder, #f56565);
+    background-color: var(
+      --vscode-inputValidation-errorBackground,
+      rgba(245, 101, 101, 0.05)
+    );
   }
 
   .result-header {
@@ -924,8 +974,11 @@
   }
 
   .result-container.result-error .result-header {
-    background-color: rgba(245, 101, 101, 0.1);
-    border-bottom-color: #f56565;
+    background-color: var(
+      --vscode-inputValidation-errorBackground,
+      rgba(245, 101, 101, 0.1)
+    );
+    border-bottom-color: var(--vscode-inputValidation-errorBorder, #f56565);
   }
 
   .result-info {
@@ -946,13 +999,23 @@
     font-size: 0.7rem;
     font-weight: 500;
     text-transform: uppercase;
-    background-color: rgba(34, 197, 94, 0.15);
-    color: rgb(34, 197, 94);
+    background-color: var(
+      --vscode-gitDecoration-addedResourceForeground,
+      rgba(34, 197, 94, 0.15)
+    );
+    color: var(
+      --vscode-gitDecoration-addedResourceForeground,
+      rgb(34, 197, 94)
+    );
+    border: 1px solid var(--vscode-contrastBorder, transparent);
   }
 
   .result-badge.badge-error {
-    background-color: rgba(245, 101, 101, 0.15);
-    color: #f56565;
+    background-color: var(
+      --vscode-inputValidation-errorBackground,
+      rgba(245, 101, 101, 0.15)
+    );
+    color: var(--vscode-inputValidation-errorForeground, #f56565);
   }
 
   .result-textarea {
@@ -969,12 +1032,16 @@
   }
 
   .result-textarea.textarea-error {
-    background-color: rgba(245, 101, 101, 0.03);
-    color: #f56565;
+    background-color: var(
+      --vscode-inputValidation-errorBackground,
+      rgba(245, 101, 101, 0.03)
+    );
+    color: var(--vscode-inputValidation-errorForeground, #f56565);
   }
 
   .result-textarea:focus {
     outline: none;
+    box-shadow: 0 0 0 1px var(--vscode-focusBorder);
   }
 
   .empty-state {
@@ -994,6 +1061,7 @@
     font-size: 3rem;
     margin-bottom: 1rem;
     opacity: 0.5;
+    color: var(--vscode-descriptionForeground);
   }
 
   .empty-state h3 {

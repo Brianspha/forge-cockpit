@@ -65,10 +65,10 @@ release-github:
 	gh release create v$(CURRENT_VERSION) --title "v$(CURRENT_VERSION)" --notes "Release v$(CURRENT_VERSION)"
 
 package-ext: build
-	vsce package
+	npx @vscode/vsce package
 
 publish-vsce: build
-	vsce publish
+	npx @vscode/vsce publish
 
 publish-ext: publish-vsce
 

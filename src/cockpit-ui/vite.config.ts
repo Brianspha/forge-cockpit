@@ -1,13 +1,26 @@
 import { defineConfig } from 'vite';
 import vue from '@vitejs/plugin-vue';
-import vscodeWebviewHmr from 'vite-plugin-vscode-webview-hmr';
 import path from 'path';
+import pluginVscode from '@tomjs/vite-plugin-vscode';
 
 export default defineConfig(({ command }) => {
   const isDev = command === 'serve';
 
   return {
-    plugins: [vue(), vscodeWebviewHmr()],
+    plugins: [
+      vue({
+        template: {
+          compilerOptions: {
+            isCustomElement: (tag: string) => tag.startsWith('vscode-'),
+          },
+        },
+      }),
+      pluginVscode({
+        recommended: false,
+        extension: { entry: '../extension.ts' },
+        webview: true,
+      }),
+    ],
     resolve: {
       alias: {
         '@': path.resolve(__dirname, './src'),

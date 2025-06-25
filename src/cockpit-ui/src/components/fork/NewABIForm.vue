@@ -456,11 +456,12 @@
     </div>
   </div>
 </template>
-
 <style scoped>
   .new-abi-form {
     max-width: 800px;
     margin: 0 auto;
+    background-color: var(--vscode-editor-background);
+    color: var(--vscode-foreground);
   }
 
   .section-title {
@@ -493,19 +494,18 @@
   .function-tab {
     padding: 0.5rem 1.25rem;
     border-radius: 1.5rem;
-    border: 1px solid
-      var(--vscode-button-border, var(--vscode-button-background));
-    background-color: var(--vscode-button-secondaryBackground, transparent);
+    border: 1px solid var(--vscode-button-border, var(--vscode-widget-border));
+    background-color: var(--vscode-button-secondaryBackground);
     font-size: 0.9rem;
     font-weight: 600;
-    color: var(--vscode-button-secondaryForeground, var(--vscode-foreground));
+    color: var(--vscode-button-secondaryForeground);
     cursor: pointer;
     transition: all 0.2s ease;
     display: flex;
     align-items: center;
     justify-content: center;
     height: 36px;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+    box-shadow: var(--vscode-widget-shadow, 0 1px 2px rgba(0, 0, 0, 0.1));
     position: relative;
     overflow: hidden;
   }
@@ -517,10 +517,14 @@
   }
 
   .function-tab:hover:not(.active) {
-    background-color: var(
-      --vscode-button-secondaryHoverBackground,
-      rgba(255, 255, 255, 0.1)
-    );
+    background-color: var(--vscode-button-secondaryHoverBackground);
+  }
+
+  .function-tab:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    background-color: var(--vscode-input-background);
+    color: var(--vscode-disabledForeground);
   }
 
   .pill-icon {
@@ -562,6 +566,7 @@
     display: block;
     font-weight: 600;
     margin-bottom: 0.5rem;
+    color: var(--vscode-foreground);
   }
 
   .select-container {
@@ -572,16 +577,30 @@
   .select-input {
     width: 100%;
     padding: 0.75rem;
-    border: 1px solid var(--vscode-input-border);
+    border: 1px solid var(--vscode-dropdown-border, var(--vscode-input-border));
     border-radius: 4px;
-    background-color: var(--vscode-input-background);
-    color: var(--vscode-input-foreground);
+    background-color: var(--vscode-dropdown-background);
+    color: var(--vscode-dropdown-foreground);
     font-family: var(--vscode-font-family);
     font-size: 0.9rem;
     -webkit-appearance: none;
     -moz-appearance: none;
     appearance: none;
     cursor: pointer;
+    transition: border-color 0.2s;
+  }
+
+  .select-input:focus {
+    outline: none;
+    border-color: var(--vscode-focusBorder);
+    box-shadow: 0 0 0 1px var(--vscode-focusBorder);
+  }
+
+  .select-input:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    background-color: var(--vscode-input-background);
+    color: var(--vscode-disabledForeground);
   }
 
   .select-container::after {
@@ -613,10 +632,28 @@
     color: var(--vscode-input-foreground);
     font-family: var(--vscode-font-family);
     font-size: 0.9rem;
+    transition: border-color 0.2s;
+  }
+
+  .text-input.with-button:focus {
+    outline: none;
+    border-color: var(--vscode-focusBorder);
+    box-shadow: 0 0 0 1px var(--vscode-focusBorder);
+  }
+
+  .text-input.with-button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    background-color: var(--vscode-input-background);
+    color: var(--vscode-disabledForeground);
   }
 
   .text-input.invalid-address {
     border-color: var(--vscode-inputValidation-errorBorder);
+    background-color: var(
+      --vscode-inputValidation-errorBackground,
+      rgba(245, 101, 101, 0.05)
+    );
   }
 
   .embedded-paste-button {
@@ -641,7 +678,16 @@
 
   .embedded-paste-button:hover:not(:disabled) {
     opacity: 1;
-    background-color: rgba(255, 255, 255, 0.1);
+    background-color: var(
+      --vscode-toolbar-hoverBackground,
+      rgba(255, 255, 255, 0.1)
+    );
+  }
+
+  .embedded-paste-button:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    color: var(--vscode-disabledForeground);
   }
 
   .text-area {
@@ -655,6 +701,20 @@
     font-family: var(--vscode-editor-font-family, monospace);
     font-size: 0.9rem;
     resize: vertical;
+    transition: border-color 0.2s;
+  }
+
+  .text-area:focus {
+    outline: none;
+    border-color: var(--vscode-focusBorder);
+    box-shadow: 0 0 0 1px var(--vscode-focusBorder);
+  }
+
+  .text-area:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    background-color: var(--vscode-input-background);
+    color: var(--vscode-disabledForeground);
   }
 
   .field-hint {
@@ -688,7 +748,7 @@
     font-size: 0.9rem;
     font-weight: 500;
     cursor: pointer;
-    border: none;
+    border: 1px solid transparent;
     transition: all 0.2s;
     display: flex;
     align-items: center;
@@ -738,8 +798,8 @@
   .button-spinner {
     width: 16px;
     height: 16px;
-    border: 2px solid rgba(255, 255, 255, 0.3);
-    border-top-color: white;
+    border: 2px solid var(--vscode-foreground, rgba(255, 255, 255, 0.3));
+    border-top-color: currentColor;
     border-radius: 50%;
     animation: spin 1s linear infinite;
   }
@@ -773,6 +833,10 @@
     gap: 0.5rem;
     font-weight: 600;
     margin-bottom: 0.5rem;
+    color: var(
+      --vscode-inputValidation-warningForeground,
+      var(--vscode-foreground)
+    );
   }
 
   .warning-list {
@@ -807,6 +871,7 @@
     font-weight: 600;
     margin-bottom: 0.5rem;
     gap: 0.5rem;
+    color: var(--vscode-inputValidation-errorForeground);
   }
 
   .form-actions {
@@ -824,6 +889,8 @@
   .action-button:disabled {
     opacity: 0.6;
     cursor: not-allowed;
+    background-color: var(--vscode-input-background);
+    color: var(--vscode-disabledForeground);
   }
 
   @media (max-width: 768px) {
@@ -837,6 +904,34 @@
 
     .form-actions button {
       width: 100%;
+    }
+
+    .function-tabs {
+      justify-content: center;
+    }
+
+    .function-tab {
+      flex: 1;
+      min-width: 120px;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .new-abi-form {
+      padding: 0.5rem;
+    }
+
+    .form-container {
+      padding: 1rem;
+    }
+
+    .function-tabs {
+      gap: 0.25rem;
+    }
+
+    .function-tab {
+      padding: 0.5rem 0.75rem;
+      font-size: 0.8rem;
     }
   }
 </style>

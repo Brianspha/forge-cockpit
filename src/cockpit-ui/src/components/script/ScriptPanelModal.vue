@@ -25,7 +25,6 @@
   const selectedNetworkUrl = ref('');
   const viaIR = ref(false);
   const hasReadCode = ref(false);
-  const showSecurityDetails = ref(false);
   const error = ref<string>('');
   const success = ref<string>('');
 
@@ -33,7 +32,6 @@
     selectedNetworkUrl.value = '';
     viaIR.value = false;
     hasReadCode.value = false;
-    showSecurityDetails.value = false;
     error.value = '';
     success.value = '';
   };
@@ -251,12 +249,6 @@
                 Experimental feature we use the default anvil accounts or any
                 other imported accounts to run the script
               </p>
-              <button
-                class="details-toggle"
-                @click="showSecurityDetails = !showSecurityDetails"
-              >
-                {{ showSecurityDetails ? 'Hide' : 'Show' }} security details
-              </button>
             </div>
           </div>
 
@@ -317,7 +309,7 @@
   .modal-overlay {
     position: fixed;
     inset: 0;
-    background-color: rgba(0, 0, 0, 0.6);
+    background-color: var(--vscode-widget-shadow, rgba(0, 0, 0, 0.6));
     display: flex;
     align-items: center;
     justify-content: center;
@@ -335,7 +327,7 @@
     overflow: hidden;
     display: flex;
     flex-direction: column;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    box-shadow: var(--vscode-widget-shadow, 0 8px 32px rgba(0, 0, 0, 0.3));
   }
 
   .modal-header {
@@ -344,24 +336,29 @@
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
+    background-color: var(
+      --vscode-titleBar-activeBackground,
+      var(--vscode-editor-background)
+    );
   }
 
   .header-content h2 {
     margin: 0 0 0.25rem;
     font-size: 1.25rem;
     font-weight: 600;
-    color: var(--vscode-foreground);
+    color: var(--vscode-titleBar-activeForeground, var(--vscode-foreground));
   }
 
   .contract-name {
     margin: 0;
     font-size: 0.875rem;
-    color: var(--vscode-descriptionForeground);
+    color: var(--vscode-badge-foreground);
     font-family: var(--vscode-editor-font-family, monospace);
     background-color: var(--vscode-badge-background);
     padding: 0.125rem 0.375rem;
     border-radius: 4px;
     display: inline-block;
+    border: 1px solid var(--vscode-contrastBorder, transparent);
   }
 
   .close-button {
@@ -385,6 +382,7 @@
     display: flex;
     flex-direction: column;
     gap: 1.5rem;
+    background-color: var(--vscode-editor-background);
   }
 
   .alerts {
@@ -404,13 +402,20 @@
   }
 
   .alert-success {
-    background-color: rgba(16, 185, 129, 0.1);
-    border: 1px solid rgba(16, 185, 129, 0.3);
+    background-color: var(
+      --vscode-inputValidation-warningBackground,
+      rgba(16, 185, 129, 0.1)
+    );
+    border: 1px solid
+      var(
+        --vscode-gitDecoration-addedResourceForeground,
+        rgba(16, 185, 129, 0.3)
+      );
     color: var(--vscode-foreground);
   }
 
   .alert-success svg {
-    color: #10b981;
+    color: var(--vscode-gitDecoration-addedResourceForeground, #10b981);
     flex-shrink: 0;
   }
 
@@ -422,6 +427,7 @@
 
   .alert-error svg {
     flex-shrink: 0;
+    color: var(--vscode-inputValidation-errorForeground);
   }
 
   .form-section {
@@ -444,22 +450,26 @@
 
   .form-select {
     padding: 0.625rem 0.75rem;
-    border: 1px solid var(--vscode-input-border);
+    border: 1px solid var(--vscode-dropdown-border, var(--vscode-input-border));
     border-radius: 4px;
     background-color: var(--vscode-dropdown-background);
     color: var(--vscode-dropdown-foreground);
     font-size: 0.875rem;
     cursor: pointer;
+    transition: border-color 0.2s;
   }
 
   .form-select:focus {
     outline: none;
     border-color: var(--vscode-focusBorder);
+    box-shadow: 0 0 0 1px var(--vscode-focusBorder);
   }
 
   .form-select:disabled {
-    opacity: 0.7;
+    opacity: 0.6;
     cursor: not-allowed;
+    background-color: var(--vscode-input-background);
+    color: var(--vscode-disabledForeground);
   }
 
   .checkbox-group {
@@ -489,8 +499,12 @@
   }
 
   .warning-section {
-    background-color: rgba(251, 191, 36, 0.08);
-    border: 1px solid rgba(251, 191, 36, 0.2);
+    background-color: var(
+      --vscode-inputValidation-warningBackground,
+      rgba(251, 191, 36, 0.08)
+    );
+    border: 1px solid
+      var(--vscode-inputValidation-warningBorder, rgba(251, 191, 36, 0.2));
     border-radius: 6px;
     padding: 1rem;
     display: flex;
@@ -508,6 +522,7 @@
     font-size: 1.125rem;
     flex-shrink: 0;
     margin-top: 0.125rem;
+    color: var(--vscode-notificationsWarningIcon-foreground, #f59e0b);
   }
 
   .warning-content h3 {
@@ -531,34 +546,15 @@
     font-size: 0.8125rem;
     text-decoration: underline;
     padding: 0;
+    transition: color 0.2s;
   }
 
   .details-toggle:hover {
     color: var(--vscode-textLink-activeForeground);
   }
 
-  .security-details {
-    padding: 0.75rem;
-    background-color: rgba(251, 191, 36, 0.05);
-    border: 1px solid rgba(251, 191, 36, 0.15);
-    border-radius: 4px;
-  }
-
-  .security-tip strong {
-    display: block;
-    margin-bottom: 0.5rem;
-    font-size: 0.875rem;
-    color: var(--vscode-foreground);
-  }
-
-  .security-tip p {
-    margin: 0 0 0.5rem;
-    font-size: 0.8125rem;
-    color: var(--vscode-foreground);
-  }
-
   .consent-group {
-    border-top: 1px solid rgba(251, 191, 36, 0.2);
+    border-top: 1px solid var(--vscode-widget-border, rgba(251, 191, 36, 0.2));
     padding-top: 1rem;
   }
 
@@ -571,6 +567,7 @@
     text-decoration: underline;
     padding: 0;
     margin-left: 0.25rem;
+    transition: color 0.2s;
   }
 
   .link-button:hover {
@@ -632,6 +629,7 @@
     display: flex;
     justify-content: flex-end;
     gap: 0.75rem;
+    background-color: var(--vscode-editor-background);
   }
 
   .button {
@@ -640,7 +638,7 @@
     font-size: 0.875rem;
     font-weight: 500;
     cursor: pointer;
-    border: none;
+    border: 1px solid transparent;
     transition: all 0.2s;
     display: flex;
     align-items: center;
@@ -651,7 +649,7 @@
   .button-secondary {
     background-color: var(--vscode-button-secondaryBackground);
     color: var(--vscode-button-secondaryForeground);
-    border: 1px solid var(--vscode-widget-border);
+    border: 1px solid var(--vscode-button-border, var(--vscode-widget-border));
   }
 
   .button-secondary:hover:not(:disabled) {
@@ -670,6 +668,8 @@
   .button:disabled {
     opacity: 0.6;
     cursor: not-allowed;
+    background-color: var(--vscode-input-background);
+    color: var(--vscode-disabledForeground);
   }
 
   @media (max-width: 768px) {

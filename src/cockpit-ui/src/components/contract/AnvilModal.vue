@@ -387,7 +387,7 @@
           Close
         </button>
         <button
-          class="create-button"
+          class="create-button primary-button"
           @click="createInstance"
           :disabled="isCreating || (nodeType === 'fork' && !nodeUrl) || !port"
         >
@@ -406,7 +406,7 @@
     left: 0;
     right: 0;
     bottom: 0;
-    background-color: rgba(0, 0, 0, 0.5);
+    background-color: var(--vscode-widget-shadow, rgba(0, 0, 0, 0.5));
     display: flex;
     align-items: center;
     justify-content: center;
@@ -423,7 +423,7 @@
     overflow: hidden;
     display: flex;
     flex-direction: column;
-    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+    box-shadow: var(--vscode-widget-shadow, 0 8px 16px rgba(0, 0, 0, 0.2));
   }
 
   .modal-header {
@@ -432,13 +432,17 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
+    background-color: var(
+      --vscode-titleBar-activeBackground,
+      var(--vscode-editor-background)
+    );
   }
 
   .modal-header h2 {
     margin: 0;
     font-size: 18px;
     font-weight: 600;
-    color: var(--vscode-foreground);
+    color: var(--vscode-titleBar-activeForeground, var(--vscode-foreground));
   }
 
   .close-button {
@@ -460,6 +464,7 @@
     padding: 20px;
     overflow-y: auto;
     max-height: 60vh;
+    background-color: var(--vscode-editor-background);
   }
 
   .alert-message {
@@ -479,6 +484,7 @@
   .alert-icon {
     font-size: 20px;
     flex-shrink: 0;
+    color: var(--vscode-inputValidation-infoForeground, #3b82f6);
   }
 
   .alert-content p {
@@ -490,8 +496,15 @@
   .success-message {
     margin: 16px 0;
     padding: 12px;
-    background-color: rgba(16, 185, 129, 0.1);
-    border: 1px solid rgba(16, 185, 129, 0.5);
+    background-color: var(
+      --vscode-inputValidation-warningBackground,
+      rgba(16, 185, 129, 0.1)
+    );
+    border: 1px solid
+      var(
+        --vscode-gitDecoration-addedResourceForeground,
+        rgba(16, 185, 129, 0.5)
+      );
     border-radius: 4px;
     display: flex;
     align-items: center;
@@ -499,7 +512,7 @@
   }
 
   .success-icon {
-    color: var(--success-color, #10b981);
+    color: var(--vscode-gitDecoration-addedResourceForeground, #10b981);
   }
 
   .success-text {
@@ -526,7 +539,7 @@
   .option-tab {
     flex: 1;
     padding: 12px 16px;
-    border: 1px solid var(--vscode-button-border);
+    border: 1px solid var(--vscode-button-border, var(--vscode-widget-border));
     border-radius: 6px;
     background-color: var(--vscode-button-secondaryBackground);
     color: var(--vscode-button-secondaryForeground);
@@ -553,6 +566,8 @@
   .option-tab:disabled {
     opacity: 0.6;
     cursor: not-allowed;
+    background-color: var(--vscode-input-background);
+    color: var(--vscode-disabledForeground);
   }
 
   .tab-icon {
@@ -582,11 +597,20 @@
     color: var(--vscode-input-foreground);
     font-family: var(--vscode-font-family);
     font-size: 14px;
+    transition: border-color 0.2s;
+  }
+
+  .text-input:focus {
+    outline: none;
+    border-color: var(--vscode-focusBorder);
+    box-shadow: 0 0 0 1px var(--vscode-focusBorder);
   }
 
   .text-input:disabled {
-    opacity: 0.7;
+    opacity: 0.6;
     cursor: not-allowed;
+    background-color: var(--vscode-input-background);
+    color: var(--vscode-disabledForeground);
   }
 
   .input-with-button {
@@ -620,7 +644,16 @@
 
   .paste-button:hover:not(:disabled) {
     opacity: 1;
-    background-color: rgba(255, 255, 255, 0.05);
+    background-color: var(
+      --vscode-toolbar-hoverBackground,
+      rgba(255, 255, 255, 0.05)
+    );
+  }
+
+  .paste-button:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    color: var(--vscode-disabledForeground);
   }
 
   .field-hint {
@@ -649,6 +682,7 @@
     border-radius: 4px;
     max-height: 120px;
     overflow-y: auto;
+    background-color: var(--vscode-input-background);
   }
 
   .instance-item {
@@ -658,10 +692,15 @@
     justify-content: space-between;
     align-items: center;
     font-size: 13px;
+    color: var(--vscode-foreground);
   }
 
   .instance-item:last-child {
     border-bottom: none;
+  }
+
+  .instance-item:hover {
+    background-color: var(--vscode-list-hoverBackground);
   }
 
   .instance-name {
@@ -720,7 +759,6 @@
     0% {
       transform: rotate(0deg);
     }
-
     100% {
       transform: rotate(360deg);
     }
@@ -743,7 +781,7 @@
   }
 
   .button-spinner.white {
-    border-color: white;
+    border-color: var(--vscode-button-foreground, white);
     border-top-color: transparent;
   }
 
@@ -753,16 +791,43 @@
     display: flex;
     justify-content: flex-end;
     gap: 12px;
+    background-color: var(--vscode-editor-background);
   }
 
-  .cancel-button,
+  .primary-button {
+    background-color: var(
+      --vscode-button-background,
+      var(--primary-color, #0078d4)
+    );
+    color: var(--vscode-button-foreground, white);
+    border-color: var(
+      --vscode-button-background,
+      var(--primary-color, #0078d4)
+    );
+    border-radius: 6px;
+  }
+
   .create-button {
     padding: 8px 16px;
     border-radius: 4px;
     font-size: 14px;
     font-weight: 500;
     cursor: pointer;
-    border: none;
+    transition: background-color 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-width: 100px;
+  }
+
+  .cancel-button {
+    padding: 8px 16px;
+    border-radius: 4px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    border: 1px solid transparent;
     transition: background-color 0.2s;
     display: flex;
     align-items: center;
@@ -780,11 +845,6 @@
     background-color: var(--vscode-button-secondaryHoverBackground);
   }
 
-  .create-button {
-    background-color: var(--vscode-button-background);
-    color: var(--vscode-button-foreground);
-  }
-
   .create-button:hover:not(:disabled) {
     background-color: var(--vscode-button-hoverBackground);
   }
@@ -793,6 +853,8 @@
   .create-button:disabled {
     opacity: 0.6;
     cursor: not-allowed;
+    background-color: var(--vscode-input-background);
+    color: var(--vscode-disabledForeground);
   }
 
   @media (max-width: 600px) {
@@ -815,6 +877,7 @@
       flex-direction: column;
       align-items: flex-start;
       gap: 8px;
+      position: relative;
     }
 
     .close-button {
@@ -827,6 +890,15 @@
       flex-direction: column;
       align-items: flex-start;
       gap: 4px;
+    }
+
+    .modal-footer {
+      flex-direction: column;
+    }
+
+    .cancel-button,
+    .create-button {
+      width: 100%;
     }
   }
 </style>

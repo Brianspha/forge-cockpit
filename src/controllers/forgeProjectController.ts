@@ -20,7 +20,7 @@ import {
 } from "../types";
 import { FoundryTaskProvider } from "../providers/taskProvider";
 import { CockPitLogProvider } from "../providers/logProvider";
-import { DEFAULT_ANVIL_ACCOUNTS, ForgeCockpitCommand, readAccounts } from "../utils";
+import { DEFAULT_ANVIL_ACCOUNTS, fileExists, ForgeCockpitCommand, readAccounts } from "../utils";
 import { checksumAddress } from "viem";
 
 export class FoundryProjectController {
@@ -58,8 +58,8 @@ export class FoundryProjectController {
 			return;
 		}
 
-		this.workspaceRoot = workspaceFolders[0].uri;
-		this.logger.logToOutput(`Initializing in workspace: ${this.workspaceRoot.fsPath}`);
+		const workspaceRoot = workspaceFolders[0].uri;
+		this.logger.logToOutput(`Searching for Foundry projects in workspace: ${workspaceRoot.fsPath}`);
 
 		if (!(await this.isForgeInstalled())) {
 			this.logger.logToOutput("Foundry is not installed or not in PATH");
@@ -68,20 +68,92 @@ export class FoundryProjectController {
 		}
 
 		try {
+			const foundryProjects = await this.findFoundryProjects(workspaceRoot);
+
+			if (foundryProjects.length === 0) {
+				throw new Error("No foundry.toml files found in workspace");
+			}
+
+			// We only care for the first found project
+			this.workspaceRoot = foundryProjects[0];
+
+			if (foundryProjects.length > 1) {
+				this.logger.logToOutput(
+					`Multiple Foundry projects found. Using: ${this.workspaceRoot.fsPath}`
+				);
+				this.logger.logToOutput(
+					`Other projects found at: ${foundryProjects
+						.slice(1)
+						.map(p => p.fsPath)
+						.join(", ")}`
+				);
+			}
+
+			await this.checkNodeModules();
 			await this.loadFoundryConfig();
 			this.isFoundryProject = true;
-			this.logger.logToOutput("Successfully loaded Foundry configuration");
+			this.logger.logToOutput(
+				`Successfully loaded Foundry configuration from: ${this.workspaceRoot.fsPath}`
+			);
 			this.logger.updateStatusBar("$(sync~spin) Forge cockpit detecting contracts...");
 			await Promise.all([this.cleanOutputDirectory(), this.executeBuild(false)]);
 			this.setupWatchers();
 			this.logger.logToOutput("File watchers setup completed");
 		} catch (error) {
-			const errorMessage = `this doesn't appear to be a Foundry project. No foundry.toml file found in the workspace root ${(error as Error).message}`;
+			const errorMessage = `No Foundry project found in workspace. ${(error as Error).message}`;
 			this.logger.updateStatusBar(
 				`$(error) Forge cockpit ${errorMessage}`,
 				new vscode.ThemeColor("statusBarItem.errorBackground")
 			);
 			this.isFoundryProject = false;
+		}
+	}
+
+	private async findFoundryProjects(workspaceUri: vscode.Uri): Promise<vscode.Uri[]> {
+		const foundryProjects: vscode.Uri[] = [];
+
+		try {
+			const foundryFiles = await vscode.workspace.findFiles(
+				new vscode.RelativePattern(workspaceUri, "**/foundry.toml"),
+				"**/node_modules/**"
+			);
+
+			for (const file of foundryFiles) {
+				const projectDir = vscode.Uri.file(path.dirname(file.fsPath));
+				foundryProjects.push(projectDir);
+			}
+
+			foundryProjects.sort((a, b) => {
+				const aDepth = path.relative(workspaceUri.fsPath, a.fsPath).split(path.sep).length;
+				const bDepth = path.relative(workspaceUri.fsPath, b.fsPath).split(path.sep).length;
+				return aDepth - bDepth;
+			});
+		} catch (error) {
+			this.logger.logToOutput(`Error searching for Foundry projects: ${(error as Error).message}`);
+		}
+
+		return foundryProjects;
+	}
+
+	private async checkNodeModules(): Promise<void> {
+		try {
+			const packageJsonPath = vscode.Uri.joinPath(this.workspaceRoot, "package.json");
+			const nodeModulesPath = vscode.Uri.joinPath(this.workspaceRoot, "node_modules");
+
+			const packageJsonExists = await fileExists(packageJsonPath);
+			if (!packageJsonExists) {
+				return;
+			}
+
+			const nodeModulesExists = await fileExists(nodeModulesPath);
+			if (!nodeModulesExists) {
+				const message =
+					"package.json found but node_modules is missing. Please run 'npm install' or 'yarn install' to install dependencies. Incase your smartcontracts use node_modules for remappings";
+				this.logger.logToOutput(message);
+				vscode.window.showInformationMessage(message);
+			}
+		} catch (error) {
+			this.logger.logToOutput(`Error checking node_modules: ${(error as Error).message}`);
 		}
 	}
 
@@ -869,6 +941,17 @@ export class FoundryProjectController {
 				return [];
 			}
 			const cockpitAccounts = vscode.Uri.joinPath(this.workspaceRoot, "cockpit-accounts.json");
+			const exists = await fileExists(cockpitAccounts);
+
+			if (!exists) {
+				this.logger.logToOutput("No cockpit-accounts.json file found, using default accounts");
+				const content = new TextEncoder().encode(JSON.stringify(DEFAULT_ANVIL_ACCOUNTS, null, 2));
+				try {
+					await vscode.workspace.fs.writeFile(cockpitAccounts, content);
+				} catch (error) {
+					this.logger.logToOutput(`Error writing default accounts: ${(error as Error).message}`);
+				}
+			}
 			const rawAccounts = await vscode.workspace.fs.readFile(cockpitAccounts);
 			const parsedAccounts = JSON.parse(new TextDecoder().decode(rawAccounts)) as ImportedAccounts;
 			const readAcc = readAccounts(

@@ -1,7 +1,15 @@
-import { Disposable, Webview, WebviewPanel, window, Uri, ViewColumn, commands, env } from "vscode";
-import { getUri } from "../utils/getUri";
-import { getNonce } from "../utils/getNonce";
-import getHtml from "@tomjs/vscode-extension-webview";
+import __getWebviewHtml__ from "@tomjs/vite-plugin-vscode/webview";
+import {
+	Disposable,
+	Webview,
+	WebviewPanel,
+	window,
+	Uri,
+	ViewColumn,
+	commands,
+	env,
+	ExtensionContext,
+} from "vscode";
 import {
 	TestFile,
 	ForkDetails,
@@ -28,27 +36,30 @@ export class ForgeCockPitPanel {
 	private readonly _panel: WebviewPanel;
 	private _disposables: Disposable[] = [];
 
-	private constructor(panel: WebviewPanel, extensionUri: Uri) {
+	private constructor(panel: WebviewPanel, context: ExtensionContext) {
 		this._panel = panel;
 
 		this._panel.onDidDispose(() => this.dispose(), null, this._disposables);
 
-		this._panel.webview.html = this._getWebviewContent(this._panel.webview, extensionUri);
+		this._panel.webview.html = this._getWebviewContent(this._panel.webview, context);
 
 		this._setWebviewMessageListener(this._panel.webview);
 	}
 
-	public static render(extensionUri: Uri) {
+	public static render(context: ExtensionContext) {
 		if (ForgeCockPitPanel.currentPanel) {
 			ForgeCockPitPanel.currentPanel._panel.reveal(ViewColumn.One);
 		} else {
 			const panel = window.createWebviewPanel("showForgeCockPit", "Forge CockPit", ViewColumn.One, {
 				retainContextWhenHidden: true,
 				enableScripts: true,
-				localResourceRoots: [Uri.joinPath(extensionUri, "out"), Uri.joinPath(extensionUri, "dist")],
+				localResourceRoots: [
+					Uri.joinPath(context.extensionUri, "out"),
+					Uri.joinPath(context.extensionUri, "dist"),
+				],
 			});
 
-			ForgeCockPitPanel.currentPanel = new ForgeCockPitPanel(panel, extensionUri);
+			ForgeCockPitPanel.currentPanel = new ForgeCockPitPanel(panel, context);
 		}
 	}
 	public static isVisible(): boolean {
@@ -71,41 +82,13 @@ export class ForgeCockPitPanel {
 		}
 	}
 
-	private _getWebviewContent(webview: Webview, extensionUri: Uri): string {
-		const devServer = process.env.VITE_DEV_SERVER_URL;
-		if (devServer) {
-			return getHtml({
-				serverUrl: devServer,
-			});
-		}
-
-		const styleUri = webview.asWebviewUri(
-			Uri.joinPath(extensionUri, "dist", "assets", "index.css")
-		);
-		const scriptUri = webview.asWebviewUri(
-			Uri.joinPath(extensionUri, "dist", "assets", "index.js")
-		);
-		const nonce = getNonce();
-
-		return `
-			<!DOCTYPE html>
-			<html lang="en">
-			<head>
-			<meta charset="UTF-8" />
-			<meta http-equiv="Content-Security-Policy"
-					content="default-src 'none'; style-src ${webview.cspSource} 'nonce-${nonce}'; script-src 'nonce-${nonce}';" />
-			<link href="${styleUri}" rel="stylesheet" nonce="${nonce}" />
-			</head>
-			<body>
-			<div id="app"></div>
-			<script nonce="${nonce}" type="module" src="${scriptUri}">
-			<script nonce="${nonce}">
-			const vscode = acquireVsCodeApi();
-			</script> 
-			</script>
-			</body>
-			</html>
-`;
+	private _getWebviewContent(webview: Webview, context: ExtensionContext): string {
+		return __getWebviewHtml__({
+			serverUrl: process.env.VITE_DEV_SERVER_URL,
+			webview,
+			context,
+			injectCode: `<script>window.__FLAG1__=666;window.__FLAG2__=888;</script>`,
+		});
 	}
 
 	private _setWebviewMessageListener(webview: Webview) {

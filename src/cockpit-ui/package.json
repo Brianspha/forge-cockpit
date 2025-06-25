@@ -2,10 +2,11 @@
   "name": "forge-cockpit-ui",
   "version": "0.0.1",
   "private": true,
+  "main": "src/main.ts",
   "scripts": {
     "start": "vite",
     "build": "vue-tsc --noEmit && vite build",
-    "preview": "vite preview --port 5000",
+    "preview": "vite preview --host",
     "typecheck": "vue-tsc --noEmit",
     "format": "prettier --write \"src/**/*.{ts,vue,js,json,css,scss}\"",
     "format:check": "prettier --check \"src/**/*.{ts,vue,js,json,css,scss}\"",

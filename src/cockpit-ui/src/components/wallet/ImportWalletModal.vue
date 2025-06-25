@@ -309,7 +309,7 @@
     justify-content: center;
     gap: 4px;
     padding: 0 8px;
-    border: 1px solid var(--vscode-button-border, transparent);
+    border: 1px solid transparent;
     border-left: none;
     border-radius: 0 2px 2px 0;
     background-color: var(
