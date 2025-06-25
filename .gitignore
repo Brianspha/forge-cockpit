@@ -5,7 +5,6 @@ dist/
 *.d.ts
 coverage/
 .nyc_output/
-webpack.config.cjs
 *.DS_Store
 media/*.DS_Store
 *.log
