@@ -1,7 +1,7 @@
 .PHONY: format lint lint-fix check install clean build watch test package typecheck package-ext publish-ext bump-patch bump-minor bump-major push release-github publish-vsce release-patch release-minor release-major release
 
 PRETTIER_FILES = "**/*.{ts,tsx,js,jsx,vue,json,md,yml,yaml,sol}"
-ESLINT_FILES = "**/*.{ts,tsx,js,jsx,vue}"
+ESLINT_FILES = "**/*.{ts,tsx,js,jsx,vue,yml,yaml,json,sol}"
 
 install:
 	npm install --legacy-peer-deps
@@ -13,8 +13,8 @@ format:
 
 format-check:
 	@echo "Checking code formatting..."
-	@npx prettier $(PRETTIER_FILES) --list-different || (echo "Files with formatting issues above ↑" && exit 1)
-	@cd src/cockpit-ui && npx prettier --check $(PRETTIER_FILES) --list-different || (echo "Files with formatting issues in cockpit-ui above ↑" && exit 1)
+	@npx prettier --check $(PRETTIER_FILES) || (echo "Files with formatting issues above ↑" && exit 1)
+	@cd src/cockpit-ui && npx prettier --check $(PRETTIER_FILES)  || (echo "Files with formatting issues in cockpit-ui above ↑" && exit 1)
 	@echo "All files are properly formatted!"
 
 lint:
