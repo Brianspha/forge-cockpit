@@ -78,7 +78,6 @@ export const useContractStore = defineStore('contract', {
     },
     setScriptExecutionResults(response: ScriptResponse) {
       if (response.success) {
-        vscode.postMessage(`response: ${JSON.stringify(response)}`);
         response.contracts.map(transaction => {
           if (transaction && transaction.success) {
             this.pendingContracts = this.pendingContracts.filter(
@@ -101,9 +100,6 @@ export const useContractStore = defineStore('contract', {
             });
           }
         });
-        vscode.postMessage(
-          `transactions: ${JSON.stringify(this.transactions)}`
-        );
       } else {
         this.lastDeployedContract = null;
         this.pendingContracts.pop();
