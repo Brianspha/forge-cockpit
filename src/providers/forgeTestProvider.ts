@@ -209,7 +209,7 @@ export class ForgeTestProvider {
 		const config: Config = {
 			...this.foundryController.getConfig(),
 			viaIR,
-			verbosity: verbose || "",
+			verbosity: verbose || "-vvvvv",
 		};
 
 		if (totalTests === 0) {
