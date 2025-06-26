@@ -11,3 +11,4 @@ media/*.DS_Store
 .DS_Store
 .DS_Store
 .env
+src/cockpit-ui/dist-extension
