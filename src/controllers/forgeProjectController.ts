@@ -506,7 +506,7 @@ export class FoundryProjectController {
 			}
 
 			if (config.verbosity) {
-				args.push("-v", config.verbosity);
+				args.push(config.verbosity);
 			}
 
 			const workingDirectory =
