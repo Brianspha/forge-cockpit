@@ -36,4 +36,5 @@ coverage/
 *.DS_Store
 *.log
 .DS_Store
-dist-extension/
+dist-extension/*
+dist-extension/extension.js
