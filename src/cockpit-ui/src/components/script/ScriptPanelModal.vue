@@ -126,13 +126,6 @@
     emit('open-link', 'https://github.com/Brianspha/forge-cockpit');
   };
 
-  const openFoundryDocs = () => {
-    emit(
-      'open-link',
-      'https://book.getfoundry.sh/reference/cast/cast-wallet-import'
-    );
-  };
-
   const formatNetworkUrl = (node: AnvilInstance) => {
     const shortUrl =
       node.nodeUrl.length > 40 ? node.nodeUrl.substring(0, 20) : node.nodeUrl;

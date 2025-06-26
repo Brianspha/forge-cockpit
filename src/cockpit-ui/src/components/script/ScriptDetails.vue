@@ -963,6 +963,7 @@
     display: flex;
     border-bottom: 1px solid var(--border-color);
     margin-bottom: 16px;
+    padding-bottom: 10px;
   }
 
   .tab-button {

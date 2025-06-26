@@ -257,7 +257,7 @@
       if (isRunningScript.value[config.contractName]) {
         isRunningScript.value[config.contractName] = false;
       }
-    }, 120000);
+    }, 60000);
   };
 
   const handleOpenLink = (url: string) => {

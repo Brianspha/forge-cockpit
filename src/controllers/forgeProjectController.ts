@@ -1005,10 +1005,8 @@ export class FoundryProjectController {
 					const abi = content.abi as ABI;
 					const bytecode =
 						content.bytecode && content.bytecode.object ? (content.bytecode.object as string) : "";
-					const solFileName =
-						content.ast && content.ast.absolutePath
-							? content.ast && path.basename(content.ast.absolutePath)
-							: "";
+					const solFileName = this.getScriptName(fileUri.fsPath);
+
 					if (abi) {
 						contracts.push({
 							fileName: contractName,
@@ -1037,6 +1035,15 @@ export class FoundryProjectController {
 			this.logger.updateStatusBar(`$(error) Forge cockpit ${errorMessage}`);
 			return [];
 		}
+	}
+
+	private getScriptName(filePath: string) {
+		if (filePath) {
+			const parentDir = path.dirname(filePath);
+			const solFileName = path.basename(parentDir);
+			return solFileName;
+		}
+		return "";
 	}
 
 	private async isForgeInstalled(): Promise<boolean> {

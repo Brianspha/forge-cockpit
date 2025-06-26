@@ -54,7 +54,10 @@ export class ForgeCockPitPanel {
 			const panel = window.createWebviewPanel("showForgeCockPit", "Forge CockPit", ViewColumn.One, {
 				retainContextWhenHidden: true,
 				enableScripts: true,
-				localResourceRoots: [Uri.joinPath(context.extensionUri, "dist")],
+				localResourceRoots: [
+					Uri.joinPath(context.extensionUri, "dist"),
+					Uri.joinPath(context.extensionUri, "out"),
+				],
 			});
 
 			ForgeCockPitPanel.currentPanel = new ForgeCockPitPanel(panel, context);
