@@ -93,7 +93,7 @@ push:
 
 release-github:
 	$(eval CURRENT_VERSION := $(shell node -p "require('./package.json').version"))
-	gh release create v$(CURRENT_VERSION) --title "v$(CURRENT_VERSION)" --notes "Release v$(CURRENT_VERSION)"
+	gh release create v$(CURRENT_VERSION) --title "v$(CURRENT_VERSION)" --notes "Release v$(CURRENT_VERSION) with bug fixes"
 
 package-ext: build
 	npx @vscode/vsce package

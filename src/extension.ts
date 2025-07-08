@@ -45,7 +45,7 @@ export async function activate(context: vscode.ExtensionContext) {
 		);
 
 		const hoverProvider = new TestHoverProvider(foundryProjectController);
-		const codeLensProvider = new TestCodeLensProvider(foundryProjectController);
+		const codeLensProvider = new TestCodeLensProvider(logger);
 		const decorationProvider = new TestDecorationProvider();
 		const actionsProvider = new CockPitActionsProvider();
 		const actionsTreeView = vscode.window.createTreeView("forgeCockpitActions", {

@@ -1,15 +1,18 @@
 import * as vscode from "vscode";
-import { FoundryProjectController } from "../controllers/forgeProjectController";
-import { DeployContract, SingleTest, TestFile } from "../types";
+import { SingleTest, TestFile } from "../types";
 import { ForgeCockpitCommand } from "../utils";
+import { CockPitLogProvider } from "./logProvider";
 
 export class TestCodeLensProvider implements vscode.CodeLensProvider {
-	constructor(private foundryManager: FoundryProjectController) {}
+	constructor(private logger: CockPitLogProvider) {}
 
 	async provideCodeLenses(
 		document: vscode.TextDocument,
 		token: vscode.CancellationToken
 	): Promise<vscode.CodeLens[]> {
+		if (token.isCancellationRequested) {
+			return [];
+		}
 		const codeLenses: vscode.CodeLens[] = [];
 		const text = document.getText();
 		const relativePath = vscode.workspace.asRelativePath(document.fileName);
@@ -26,17 +29,26 @@ export class TestCodeLensProvider implements vscode.CodeLensProvider {
 		codeLenses: vscode.CodeLens[]
 	): void {
 		if (this.isNotTestOrScriptFile(relativePath)) {
+			this.logger.logToOutput(`Current file is not a test file`);
 			return;
 		}
-		const functionRegex = /function\s+(test\w+)\s*\(/g;
+
+		const normalizedPath = this.normalizeTestPath(relativePath);
+		const functionRegex = /^\s*function\s+(test\w+)\s*\(/gm;
 		let match;
 
 		while ((match = functionRegex.exec(text)) !== null) {
 			const functionName = match[1];
 			const position = document.positionAt(match.index);
+
+			const functionKeywordIndex = match.index + match[0].indexOf("function");
+			const functionKeywordPosition = document.positionAt(functionKeywordIndex);
 			const range = new vscode.Range(
-				position,
-				position.with(undefined, position.character + match[0].length)
+				functionKeywordPosition,
+				functionKeywordPosition.with(
+					undefined,
+					functionKeywordPosition.character + "function".length + 1 + functionName.length
+				)
 			);
 
 			const runTestCmd = {
@@ -44,7 +56,7 @@ export class TestCodeLensProvider implements vscode.CodeLensProvider {
 				command: ForgeCockpitCommand.RunTestCommand,
 				arguments: [
 					{
-						contractName: relativePath,
+						contractName: normalizedPath,
 						testName: functionName,
 					} as SingleTest,
 				],
@@ -55,12 +67,14 @@ export class TestCodeLensProvider implements vscode.CodeLensProvider {
 				command: ForgeCockpitCommand.RunTestViaIRCommand,
 				arguments: [
 					{
-						contractName: relativePath,
+						contractName: normalizedPath,
 						testName: functionName,
 						viaIR: true,
 					} as SingleTest,
 				],
 			};
+
+			this.logger.logToOutput(`Found test for code lens function ${functionName}`);
 
 			codeLenses.push(new vscode.CodeLens(range, runTestCmd));
 			codeLenses.push(new vscode.CodeLens(range, runTestViaIRCmd));
@@ -76,15 +90,22 @@ export class TestCodeLensProvider implements vscode.CodeLensProvider {
 		if (!this.isNotTestOrScriptFile(relativePath)) {
 			return;
 		}
-		const contractRegex = /contract\s+(\w+)(?:\s+is\s+|\s*\{)/g;
+
+		const normalizedPath = this.normalizeTestPath(relativePath);
+		const contractRegex = /^\s*contract\s+(\w+)(?:\s+is\s+[^{]+)?\s*\{/gm;
 		let match;
 
 		while ((match = contractRegex.exec(text)) !== null) {
 			const contractName = match[1];
 			const position = document.positionAt(match.index);
+			const contractKeywordIndex = match.index + match[0].indexOf("contract");
+			const contractKeywordPosition = document.positionAt(contractKeywordIndex);
 			const range = new vscode.Range(
-				position,
-				position.with(undefined, position.character + match[0].length - 1)
+				contractKeywordPosition,
+				contractKeywordPosition.with(
+					undefined,
+					contractKeywordPosition.character + "contract".length + 1 + contractName.length
+				)
 			);
 
 			const generateTestsCmd = {
@@ -93,7 +114,7 @@ export class TestCodeLensProvider implements vscode.CodeLensProvider {
 				arguments: [
 					{
 						fileName: contractName,
-						filePath: relativePath,
+						filePath: normalizedPath,
 					} as TestFile,
 				],
 			};
@@ -106,7 +127,16 @@ export class TestCodeLensProvider implements vscode.CodeLensProvider {
 		return /^(?!.*\.(t|s)\.sol).*$/.test(fileName);
 	}
 
-	private isScriptFile(fileName: string): boolean {
-		return /\.s\.sol$/.test(fileName);
+	private normalizeTestPath(relativePath: string): string {
+		const testIndex = relativePath.indexOf("/test/");
+		if (testIndex !== -1) {
+			return relativePath.substring(testIndex + 1);
+		}
+
+		if (relativePath.startsWith("test/")) {
+			return relativePath;
+		}
+
+		return relativePath;
 	}
 }
