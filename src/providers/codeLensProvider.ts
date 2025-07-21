@@ -97,7 +97,6 @@ export class TestCodeLensProvider implements vscode.CodeLensProvider {
 
 		while ((match = contractRegex.exec(text)) !== null) {
 			const contractName = match[1];
-			const position = document.positionAt(match.index);
 			const contractKeywordIndex = match.index + match[0].indexOf("contract");
 			const contractKeywordPosition = document.positionAt(contractKeywordIndex);
 			const range = new vscode.Range(

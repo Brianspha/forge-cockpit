@@ -13,7 +13,7 @@ export class AbiProvider {
 	constructor(
 		private readonly foundryProjectController: FoundryProjectController,
 		private readonly logger: CockPitLogProvider
-	) {}
+	) { }
 
 	initialize() {
 		this.logger.updateStatusBar(
@@ -33,7 +33,7 @@ export class AbiProvider {
 	private async loadAbis() {
 		try {
 			this.abis = await this.foundryProjectController.getAllContractABIs();
-		} catch (error) {}
+		} catch (error) { }
 	}
 
 	private setupFileWatcher() {
@@ -63,7 +63,7 @@ export class AbiProvider {
 		if (this.debounceTimer) {
 			clearTimeout(this.debounceTimer);
 		}
-
+		this.logger.logToOutput(`Triggered ${source}`)
 		this.debounceTimer = setTimeout(async () => {
 			await this.loadAbis();
 			this._onDidChangeAbis.fire();

@@ -109,7 +109,16 @@ contract {{CONTRACT}}Test is Test {
 			if (!workspaceFolder) {
 				throw new Error("No workspace folder found.");
 			}
-			const absolutePath = path.join(workspaceFolder.uri.fsPath, filePath);
+
+			const wsName = path.basename(workspaceFolder.uri.fsPath);
+
+			let normalized = filePath;
+			if (normalized.startsWith(wsName + path.sep)) {
+				normalized = normalized.slice(wsName.length + 1);
+			}
+
+			const absolutePath = path.join(workspaceFolder.uri.fsPath, normalized);
+
 			const sourceCode = await vscode.workspace.fs.readFile(vscode.Uri.file(absolutePath));
 			this.sourceCode = Buffer.from(sourceCode).toString("utf8");
 
@@ -127,6 +136,7 @@ contract {{CONTRACT}}Test is Test {
 			this.logger.logToOutput(`Error generating test file: ${(error as Error).stack}`);
 		}
 	}
+
 
 	private extractAbiEvents(): void {
 		const eventItems = this.abi.filter(item => item.type === "event");
