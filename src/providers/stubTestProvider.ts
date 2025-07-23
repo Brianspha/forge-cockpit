@@ -137,7 +137,6 @@ contract {{CONTRACT}}Test is Test {
 		}
 	}
 
-
 	private extractAbiEvents(): void {
 		const eventItems = this.abi.filter(item => item.type === "event");
 		for (const event of eventItems) {
