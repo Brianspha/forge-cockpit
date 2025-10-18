@@ -347,7 +347,6 @@ export class ForgeTestProvider {
 	public runTest(test: SingleTest): void {
 		const testId = `${test.contractName}:${test.testName}`;
 		const testItem = this.testItems.get(testId);
-
 		if (testItem) {
 			const request = new vscode.TestRunRequest([testItem]);
 			this.runHandler(request, new vscode.CancellationTokenSource().token, false);

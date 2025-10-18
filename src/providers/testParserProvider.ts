@@ -97,7 +97,7 @@ export class TestParserProvider {
 
 		try {
 			const pattern = new vscode.RelativePattern(
-				workspaceFolders[0],
+				this.config.workspaceRoot,
 				`${this.config.testDir}/**/*.t.sol`
 			);
 			this.watcher = vscode.workspace.createFileSystemWatcher(pattern);
