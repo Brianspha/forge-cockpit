@@ -34,6 +34,15 @@ export class CockPitActionsProvider implements vscode.TreeDataProvider<CockPitAc
 				"play"
 			),
 			new CockPitActionItem(
+				"Rebuild Project",
+				"Rebuild local Foundry artifacts",
+				{
+					command: ForgeCockpitCommand.RebuildProjectCommand,
+					title: "Rebuild Project",
+				},
+				"refresh"
+			),
+			new CockPitActionItem(
 				"Clear Cockpit Cache",
 				"Clear Forge Cockpit cache",
 				{

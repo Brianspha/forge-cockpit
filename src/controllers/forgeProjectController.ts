@@ -17,6 +17,10 @@ import {
 	Account,
 	ImportedAccounts,
 	ScriptResponse,
+	CockpitSettings,
+	CockpitSettingUpdate,
+	LocalProjectState,
+	LocalProjectStatus,
 } from "../types";
 import { FoundryTaskProvider } from "../providers/taskProvider";
 import { CockPitLogProvider } from "../providers/logProvider";
@@ -24,6 +28,7 @@ import { DEFAULT_ANVIL_ACCOUNTS, fileExists, ForgeCockpitCommand, readAccounts }
 import { checksumAddress } from "viem";
 
 export class FoundryProjectController {
+	private static readonly testVerbosityOptions = ["-v", "-vv", "-vvv", "-vvvv", "-vvvvv"];
 	private workspaceRoot: vscode.Uri | undefined;
 	public isFoundryProject: boolean = false;
 	private fileWatchers: vscode.FileSystemWatcher[] = [];
@@ -32,9 +37,19 @@ export class FoundryProjectController {
 	private debounceTimer: NodeJS.Timeout | undefined;
 	private _onDidBuildSucceed: vscode.EventEmitter<void> = new vscode.EventEmitter<void>();
 	public readonly onDidBuildSucceed: vscode.Event<void> = this._onDidBuildSucceed.event;
+	private _onDidChangeProjectState: vscode.EventEmitter<LocalProjectState> =
+		new vscode.EventEmitter<LocalProjectState>();
+	public readonly onDidChangeProjectState: vscode.Event<LocalProjectState> =
+		this._onDidChangeProjectState.event;
 	private taskProvider: FoundryTaskProvider;
 	private taskProviderDisposable: vscode.Disposable | undefined;
 	private accounts: Array<Account> = [];
+	private localProjectState: LocalProjectState = {
+		status: "missingArtifacts",
+		message: "Run a rebuild to load local contract and script artifacts.",
+		hasArtifacts: false,
+		updatedAt: new Date().toISOString(),
+	};
 	public config: Config = {
 		verbosity: "-vvvvv",
 		viaIR: false,
@@ -54,6 +69,7 @@ export class FoundryProjectController {
 		const workspaceFolders = vscode.workspace.workspaceFolders;
 		if (!workspaceFolders || workspaceFolders.length === 0) {
 			this.logger.logToOutput("No workspace folder is open");
+			this.setLocalProjectState("error", "No workspace folder is open.", false);
 			vscode.window.showInformationMessage("No workspace folder is open.");
 			return;
 		}
@@ -63,6 +79,11 @@ export class FoundryProjectController {
 
 		if (!(await this.isForgeInstalled())) {
 			this.logger.logToOutput("Foundry is not installed or not in PATH");
+			this.setLocalProjectState(
+				"error",
+				"Foundry is not installed or not available in PATH.",
+				false
+			);
 			this.showForgeNotInstalledError();
 			return;
 		}
@@ -74,7 +95,6 @@ export class FoundryProjectController {
 				throw new Error("No foundry.toml files found in workspace");
 			}
 
-			// We only care for the first found project
 			this.workspaceRoot = foundryProjects[0];
 
 			if (foundryProjects.length > 1) {
@@ -95,12 +115,12 @@ export class FoundryProjectController {
 			this.logger.logToOutput(
 				`Successfully loaded Foundry configuration from: ${this.workspaceRoot.fsPath}`
 			);
-			this.logger.updateStatusBar("$(sync~spin) Forge cockpit detecting contracts...");
-			await Promise.all([this.cleanOutputDirectory(), this.executeBuild(false)]);
 			this.setupWatchers();
+			await this.refreshLocalProjectState();
 			this.logger.logToOutput("File watchers setup completed");
 		} catch (error) {
 			const errorMessage = `No Foundry project found in workspace. ${(error as Error).message}`;
+			this.setLocalProjectState("error", errorMessage, false);
 			this.logger.updateStatusBar(
 				`$(error) Forge cockpit ${errorMessage}`,
 				new vscode.ThemeColor("statusBarItem.errorBackground")
@@ -168,7 +188,7 @@ export class FoundryProjectController {
 		const foundryConfig = toml.parse(parsedContent);
 
 		this.config = {
-			verbosity: "-vvvvv",
+			verbosity: this.getDefaultTestVerbosity(),
 			viaIR: foundryConfig.profile?.default?.via_ir || false,
 			testDir: foundryConfig.profile?.default?.test || "test",
 			srcDir: foundryConfig.profile?.default?.src || "src",
@@ -176,6 +196,183 @@ export class FoundryProjectController {
 			scriptDir: foundryConfig.profile?.default?.script || "script",
 			workspaceRoot: this.workspaceRoot,
 		} as Config;
+	}
+
+	private setLocalProjectState(
+		status: LocalProjectStatus,
+		message: string,
+		hasArtifacts: boolean
+	): void {
+		this.localProjectState = {
+			status,
+			message,
+			hasArtifacts,
+			projectRoot: this.workspaceRoot?.fsPath,
+			updatedAt: new Date().toISOString(),
+		};
+
+		switch (status) {
+			case "ready":
+				this.logger.updateStatusBar("$(check) Forge cockpit ready");
+				break;
+			case "rebuilding":
+				this.logger.updateStatusBar(
+					"$(sync~spin) Forge cockpit Building...",
+					new vscode.ThemeColor("statusBarItem.warningBackground")
+				);
+				break;
+			case "stale":
+			case "missingArtifacts":
+				this.logger.updateStatusBar(
+					"$(warning) Forge cockpit rebuild required",
+					new vscode.ThemeColor("statusBarItem.warningBackground")
+				);
+				break;
+			case "error":
+				this.logger.updateStatusBar(
+					`$(error) Forge cockpit ${message}`,
+					new vscode.ThemeColor("statusBarItem.errorBackground")
+				);
+				break;
+		}
+
+		this._onDidChangeProjectState.fire(this.localProjectState);
+	}
+
+	private getDefaultTestVerbosity(): string {
+		return vscode.workspace
+			.getConfiguration("forge-cockpit")
+			.get<string>("testVerbosity", "-vvvvv");
+	}
+
+	public getCockpitSettings(): CockpitSettings {
+		const config = this.getConfig();
+		return {
+			testVerbosity: this.getDefaultTestVerbosity(),
+			availableVerbosityLevels: [...FoundryProjectController.testVerbosityOptions],
+			project: {
+				projectRoot: config.workspaceRoot.fsPath,
+				srcDir: config.srcDir,
+				testDir: config.testDir,
+				scriptDir: config.scriptDir,
+				outputDir: config.outputDir,
+				viaIR: config.viaIR,
+			},
+		};
+	}
+
+	public async updateCockpitSetting(setting: CockpitSettingUpdate): Promise<CockpitSettings> {
+		switch (setting.key) {
+			case "testVerbosity":
+				if (!FoundryProjectController.testVerbosityOptions.includes(setting.value)) {
+					throw new Error(`Unsupported test verbosity: ${setting.value}`);
+				}
+				await vscode.workspace
+					.getConfiguration("forge-cockpit")
+					.update("testVerbosity", setting.value, vscode.ConfigurationTarget.Workspace);
+				break;
+		}
+
+		return this.getCockpitSettings();
+	}
+
+	private async getArtifactFiles(): Promise<vscode.Uri[]> {
+		if (!this.workspaceRoot || !this.config.outputDir) {
+			return [];
+		}
+
+		const outputDirUri = vscode.Uri.joinPath(this.workspaceRoot, this.config.outputDir);
+		const jsonFiles = await vscode.workspace.findFiles(
+			new vscode.RelativePattern(outputDirUri, "**/*.json")
+		);
+
+		return jsonFiles.filter(fileUri => {
+			const relativePath = path.relative(outputDirUri.fsPath, fileUri.fsPath);
+			return !relativePath.startsWith("build-info");
+		});
+	}
+
+	private async getLatestModifiedTime(files: vscode.Uri[]): Promise<number> {
+		let latestModifiedTime = 0;
+
+		for (const file of files) {
+			try {
+				const stat = await vscode.workspace.fs.stat(file);
+				latestModifiedTime = Math.max(latestModifiedTime, stat.mtime);
+			} catch (error) {
+				this.logger.logToOutput(
+					`Unable to read file stats for ${file.fsPath}: ${(error as Error).message}`
+				);
+			}
+		}
+
+		return latestModifiedTime;
+	}
+
+	private async isArtifactOutputStale(artifactFiles: vscode.Uri[]): Promise<boolean> {
+		if (!this.workspaceRoot || artifactFiles.length === 0) {
+			return false;
+		}
+
+		const sourcePatterns = [
+			new vscode.RelativePattern(this.workspaceRoot, `${this.config.srcDir}/**/*.sol`),
+			new vscode.RelativePattern(this.workspaceRoot, `${this.config.testDir}/**/*.sol`),
+			new vscode.RelativePattern(this.workspaceRoot, `${this.config.scriptDir}/**/*.sol`),
+		];
+
+		const sourceFileSets = await Promise.all(
+			sourcePatterns.map(pattern => vscode.workspace.findFiles(pattern))
+		);
+		const sourceFiles = sourceFileSets.flat();
+
+		if (sourceFiles.length === 0) {
+			return false;
+		}
+
+		const [latestSourceModifiedTime, latestArtifactModifiedTime] = await Promise.all([
+			this.getLatestModifiedTime(sourceFiles),
+			this.getLatestModifiedTime(artifactFiles),
+		]);
+
+		return latestSourceModifiedTime > latestArtifactModifiedTime;
+	}
+
+	public getLocalProjectState(): LocalProjectState {
+		return this.localProjectState;
+	}
+
+	public async refreshLocalProjectState(): Promise<LocalProjectState> {
+		if (!this.isFoundryProject || !this.workspaceRoot) {
+			this.setLocalProjectState("error", "No active Foundry project found.", false);
+			return this.localProjectState;
+		}
+
+		const artifactFiles = await this.getArtifactFiles();
+		if (artifactFiles.length === 0) {
+			this.setLocalProjectState(
+				"missingArtifacts",
+				"Run a rebuild to load local contract and script artifacts.",
+				false
+			);
+			return this.localProjectState;
+		}
+
+		const isStale = await this.isArtifactOutputStale(artifactFiles);
+		if (isStale) {
+			this.setLocalProjectState(
+				"stale",
+				"Local source files changed. Rebuild before using local contract or script actions.",
+				true
+			);
+			return this.localProjectState;
+		}
+
+		this.setLocalProjectState("ready", "Local artifacts are up to date.", true);
+		return this.localProjectState;
+	}
+
+	private markLocalProjectStale(reason: string): void {
+		this.setLocalProjectState("stale", reason, this.localProjectState.hasArtifacts);
 	}
 
 	private showForgeNotInstalledError(): void {
@@ -215,7 +412,10 @@ export class FoundryProjectController {
 			`${this.config?.scriptDir}/**/*.sol`,
 			this.handleSourceChange.bind(this)
 		);
-		this.createFileWatcher(this.config?.outputDir || "out", this.handleFileChange.bind(this));
+		this.createFileWatcher(
+			`${this.config?.outputDir || "out"}/**/*.json`,
+			this.handleFileChange.bind(this)
+		);
 	}
 
 	private createFileWatcher(pattern: string, changeHandler: (uri: vscode.Uri) => void): void {
@@ -235,60 +435,99 @@ export class FoundryProjectController {
 
 	private handleSourceChange(uri: vscode.Uri): void {
 		this.logger.logToOutput(`Source file changed: ${path.basename(uri.fsPath)}`);
-		this.debouncedBuild(1500);
+		this.scheduleProjectStateRefresh(() => {
+			this.markLocalProjectStale(
+				"Local source files changed. Rebuild before using local contract or script actions."
+			);
+		}, 500);
 	}
 
 	private handleFileChange(uri: vscode.Uri): void {
 		this.logger.logToOutput(`Output file changed: ${path.basename(uri.fsPath)}`);
-		this.debouncedBuild(1000);
+		this.scheduleProjectStateRefresh(async () => {
+			await this.refreshLocalProjectState();
+		}, 500);
 	}
 
-	private debouncedBuild(delay: number): void {
+	private scheduleProjectStateRefresh(task: () => Promise<void> | void, delay: number): void {
 		if (this.debounceTimer) {
 			clearTimeout(this.debounceTimer);
 		}
 
-		this.debounceTimer = setTimeout(async () => {
-			await this.triggerBuild();
-			vscode.commands.executeCommand(ForgeCockpitCommand.RefreshTestsCommand);
-			vscode.commands.executeCommand(ForgeCockpitCommand.LoadCockPitWalletsCommand);
+		this.debounceTimer = setTimeout(() => {
+			void task();
 		}, delay);
 	}
 
-	public async triggerBuild(): Promise<void> {
+	public async triggerBuild(): Promise<LocalProjectState> {
 		if (!this.isFoundryProject || !this.workspaceRoot) {
 			this.logger.logToOutput("Cannot trigger build - not a Foundry project or no workspace");
-			return;
+			this.setLocalProjectState(
+				"error",
+				"Cannot rebuild without an active Foundry project.",
+				false
+			);
+			return this.localProjectState;
 		}
 
 		if (this.buildInProgress) {
 			this.logger.logToOutput("Build already in progress - queuing next build");
 			this.buildQueue = true;
-			return;
+			return this.localProjectState;
 		}
 
 		this.buildInProgress = true;
 		this.logger.logToOutput("Triggering build process");
-		this.logger.updateStatusBar(
-			"$(sync~spin) Forge cockpit Building...",
-			new vscode.ThemeColor("statusBarItem.warningBackground")
+		this.setLocalProjectState(
+			"rebuilding",
+			"Rebuilding local artifacts...",
+			this.localProjectState.hasArtifacts
 		);
 
 		try {
-			await this.executeBuild(false);
+			await this.runRebuildPipeline();
 		} catch (error) {
 			this.logger.logToOutput(`Build trigger failed: ${(error as Error).stack}`);
-			this.logger.updateStatusBar(
-				`$(error) Forge cockpit build failed: ${(error as Error).message}`,
-				new vscode.ThemeColor("statusBarItem.errorBackground")
+			this.setLocalProjectState(
+				"error",
+				`Build failed: ${(error as Error).message}`,
+				this.localProjectState.hasArtifacts
 			);
 		} finally {
 			this.buildInProgress = false;
 			if (this.buildQueue) {
 				this.logger.logToOutput("Processing queued build");
 				this.buildQueue = false;
-				setTimeout(() => this.triggerBuild(), 100);
+				setTimeout(() => void this.triggerBuild(), 100);
 			}
+		}
+
+		return this.localProjectState;
+	}
+
+	private async runRebuildPipeline(): Promise<void> {
+		if (!this.workspaceRoot) {
+			return;
+		}
+
+		const forgePath = await this.getExecutablePath("forge");
+		const workingDirectory = this.workspaceRoot.fsPath;
+		const rebuildSteps = [
+			{ label: "format", args: [forgePath, "fmt"] },
+			{ label: "clean", args: [forgePath, "clean"] },
+		];
+
+		for (const step of rebuildSteps) {
+			this.logger.logToOutput(`Starting forge ${step.label}`);
+			const result = await this.executeCommand(step.args, workingDirectory, true);
+			if (result.exitCode !== 0) {
+				throw new Error(`forge ${step.label} failed`);
+			}
+		}
+
+		const buildSucceeded = await this.executeBuild(false);
+		if (!buildSucceeded) {
+			throw new Error("forge build failed");
 		}
 	}
 
@@ -371,7 +610,7 @@ export class FoundryProjectController {
 			this.logger.logToOutput(`Starting build${useViaIr ? " with --via-ir" : ""}`);
 
 			const forgePath = await this.getExecutablePath("forge");
-			const args = [forgePath, "build", "--contracts", `./${this.config?.srcDir}`];
+			const args = [forgePath, "build"];
 
 			if (useViaIr) {
 				args.push("--via-ir");
@@ -388,15 +627,21 @@ export class FoundryProjectController {
 					`$(error) Forge cockpit build failed`,
 					new vscode.ThemeColor("statusBarItem.errorBackground")
 				);
+				this.setLocalProjectState("error", "Build failed.", this.localProjectState.hasArtifacts);
 				return false;
 			}
 
 			this.logger.logToOutput("Build completed successfully");
-			this.logger.updateStatusBar("$(check) Forge cockpit build succeeded");
+			this.setLocalProjectState("ready", "Local artifacts are up to date.", true);
 			this.onBuildSucceeded();
 			return true;
 		} catch (error: any) {
 			this.logger.logToOutput(`Build error: ${(error as Error).stack}`);
+			this.setLocalProjectState(
+				"error",
+				`Build failed: ${(error as Error).message}`,
+				this.localProjectState.hasArtifacts
+			);
 			this.logger.updateStatusBar(
 				`$(error) Forge cockpit build failed: ${(error as Error).message}`,
 				new vscode.ThemeColor("statusBarItem.errorBackground")
@@ -418,7 +663,6 @@ export class FoundryProjectController {
 			} as TestExecutionResponse;
 		}
 
-		this.config = config;
 		this.logger.logToOutput(`Starting test execution: ${testName} in ${contractFile}`);
 		this.logger.updateStatusBar(
 			`$(beaker~spin) Forge cockpit running test: ${testName}`,
@@ -433,6 +677,8 @@ export class FoundryProjectController {
 				contractFile: contractFile,
 				taskId: `test-${testName}-${Date.now()}`,
 				port: "0",
+				viaIR: config.viaIR,
+				verbosity: config.verbosity,
 			};
 
 			const execution = await this.taskProvider.executeTask(definition);
@@ -491,7 +737,6 @@ export class FoundryProjectController {
 			return [];
 		}
 
-		this.config = config;
 		this.logger.logToOutput(`Starting all tests execution`);
 		this.logger.updateStatusBar(
 			`$(beaker~spin) Forge cockpit running all tests`,
@@ -929,8 +1174,8 @@ export class FoundryProjectController {
 	}
 
 	private async onBuildSucceeded(): Promise<void> {
-		this.logger.logToOutput("Build succeeded - scanning for contract ABIs");
-		await this.getAllContractABIs();
+		this.logger.logToOutput("Build succeeded - local project state refreshed");
+		await this.refreshLocalProjectState();
 		this.logger.logToOutput("Firing build success event");
 		this._onDidBuildSucceed.fire();
 	}
@@ -988,10 +1233,9 @@ export class FoundryProjectController {
 			this.logger.logToOutput(`Found ${jsonFiles.length} JSON files in output directory`);
 
 			if (jsonFiles.length === 0) {
-				const message = `No contract files found in ${this.config.testDir} directory. Have you compiled the project?`;
-				this.logger.logToOutput(message);
-				this.triggerBuild();
-				vscode.window.showInformationMessage(message);
+				this.logger.logToOutput(
+					`No artifact files found in ${this.config.outputDir}. Waiting for an explicit rebuild.`
+				);
 				return [];
 			}
 
@@ -1239,7 +1483,10 @@ export class FoundryProjectController {
 	}
 
 	public getConfig(): Config {
-		return this.config;
+		return {
+			...this.config,
+			verbosity: this.getDefaultTestVerbosity(),
+		};
 	}
 
 	public getSourceDirectory(): string {
@@ -1261,5 +1508,6 @@ export class FoundryProjectController {
 		this.taskProviderDisposable?.dispose();
 		this.logger.dispose();
 		this._onDidBuildSucceed.dispose();
+		this._onDidChangeProjectState.dispose();
 	}
 }

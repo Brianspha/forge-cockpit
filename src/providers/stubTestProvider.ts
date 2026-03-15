@@ -1,10 +1,13 @@
 import * as vscode from "vscode";
-import { ABI, ContractPattern, EventInfo, StateVariable } from "../types";
+import { ABI, Config, ContractInfo, ContractPattern, EventInfo, StateVariable } from "../types";
 import { CockPitLogProvider } from "./logProvider";
 import path from "path";
+import { SolidityScaffoldAnalyzer } from "../utils/solidityScaffoldAnalyzer";
+import { fileExists } from "../utils";
 
 export class StubTestProvider {
-	private readonly contractName: string;
+	private readonly workspaceRoot: vscode.Uri;
+	private contractName: string;
 	private readonly abi: ABI;
 	private readonly logger: CockPitLogProvider;
 	private sourceCode = "";
@@ -13,13 +16,23 @@ export class StubTestProvider {
 	private readonly stateVariables = new Map<string, StateVariable>();
 	private readonly abiEvents = new Map<string, any>();
 	private readonly errors = new Map<string, any>();
+	private dependencyImportPaths = new Map<string, string>();
+	private contractImportPath = "";
+	private contractInfo: ContractInfo = {
+		name: "",
+		isUpgradeable: false,
+		hasInitializer: false,
+		dependencies: new Set<string>(),
+		inheritanceChain: [],
+		stateVariables: [],
+		upgradeType: "none",
+		usesFoundryUpgrades: false,
+	};
 
 	private readonly patterns: ContractPattern[] = [
 		{
 			name: "foundry-uups",
-			detect: (code, abi) =>
-				code.includes("openzeppelin-foundry-upgrades") &&
-				(code.includes("UUPS") || this.hasInitializer(abi)),
+			detect: () => this.contractInfo.upgradeType === "uups",
 			template: {
 				imports: 'import {UnsafeUpgrades} from "openzeppelin-foundry-upgrades/Upgrades.sol";',
 				declarations: "address public proxy;",
@@ -28,8 +41,7 @@ export class StubTestProvider {
 		},
 		{
 			name: "foundry-transparent",
-			detect: (code, abi) =>
-				code.includes("openzeppelin-foundry-upgrades") && code.includes("Transparent"),
+			detect: () => this.contractInfo.upgradeType === "transparent",
 			template: {
 				imports: 'import {UnsafeUpgrades} from "openzeppelin-foundry-upgrades/Upgrades.sol";',
 				declarations: "address public proxy;",
@@ -38,15 +50,11 @@ export class StubTestProvider {
 		},
 		{
 			name: "erc1967-proxy",
-			detect: (code, abi) =>
-				(code.includes("upgradeable") || code.includes("proxy") || this.hasInitializer(abi)) &&
-				!code.includes("foundry-upgrades"),
+			detect: () => this.contractInfo.upgradeType === "beacon",
 			template: {
-				imports: 'import "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";',
-				declarations: "ERC1967Proxy public proxy;\n    address public implementation;",
-				setup: `implementation = address(new {{CONTRACT}}());
-        proxy = new ERC1967Proxy(implementation, {{INIT_DATA}});
-        {{CONTRACT_VAR}} = {{CONTRACT}}(address(proxy));`,
+				imports: 'import {UnsafeUpgrades} from "openzeppelin-foundry-upgrades/Upgrades.sol";',
+				declarations: "address public beacon;\n    address public proxy;",
+				setup: `beacon = UnsafeUpgrades.deployBeacon(address(new {{CONTRACT}}()), address(this));\n        proxy = UnsafeUpgrades.deployBeaconProxy(beacon, {{INIT_DATA}});\n        {{CONTRACT_VAR}} = {{CONTRACT}}(proxy);`,
 			},
 		},
 		{
@@ -64,7 +72,7 @@ export class StubTestProvider {
 pragma solidity ^0.8.20;
 
 import "forge-std/Test.sol";
-import "src/{{CONTRACT}}.sol";{{DEPENDENCY_IMPORTS}}{{PATTERN_IMPORTS}}
+import "{{CONTRACT_IMPORT_PATH}}";{{DEPENDENCY_IMPORTS}}{{PATTERN_IMPORTS}}
 
 contract {{CONTRACT}}Test is Test {
     {{CONTRACT}} public {{CONTRACT_VAR}};{{DEPENDENCY_DECLARATIONS}}{{PATTERN_DECLARATIONS}}
@@ -94,7 +102,34 @@ contract {{CONTRACT}}Test is Test {
 }
 `;
 
-	constructor(contractName: string, abi: ABI, logger: CockPitLogProvider) {
+	private readonly deploymentScriptTemplate = `// SPDX-License-Identifier: UNLICENSED
+pragma solidity ^0.8.20;
+
+import "forge-std/Script.sol";
+import "{{CONTRACT_IMPORT_PATH}}";{{DEPENDENCY_IMPORTS}}{{SCRIPT_PATTERN_IMPORTS}}
+
+contract Deploy{{CONTRACT}} is Script {
+    {{DEPENDENCY_DECLARATIONS}}
+
+    function run() external returns (address deployed) {
+        vm.startBroadcast();
+{{DEPENDENCY_SETUP}}        deployed = _deploy();
+        vm.stopBroadcast();
+    }
+
+    function _deploy() internal returns (address deployed) {
+{{SCRIPT_DEPLOY_BODY}}
+    }
+}
+`;
+
+	constructor(
+		contractName: string,
+		abi: ABI,
+		logger: CockPitLogProvider,
+		private readonly config: Pick<Config, "testDir" | "scriptDir" | "workspaceRoot">
+	) {
+		this.workspaceRoot = config.workspaceRoot;
 		this.contractName = contractName;
 		this.abi = abi;
 		this.logger = logger;
@@ -103,37 +138,105 @@ contract {{CONTRACT}}Test is Test {
 		this.extractAbiErrors();
 	}
 
-	public async generateTestFile(filePath: string): Promise<void> {
+	public async generateTestFile(filePath: string): Promise<vscode.Uri | undefined> {
 		try {
-			const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
-			if (!workspaceFolder) {
-				throw new Error("No workspace folder found.");
-			}
-
-			const wsName = path.basename(workspaceFolder.uri.fsPath);
-
-			let normalized = filePath;
-			if (normalized.startsWith(wsName + path.sep)) {
-				normalized = normalized.slice(wsName.length + 1);
-			}
-
-			const absolutePath = path.join(workspaceFolder.uri.fsPath, normalized);
-
-			const sourceCode = await vscode.workspace.fs.readFile(vscode.Uri.file(absolutePath));
-			this.sourceCode = Buffer.from(sourceCode).toString("utf8");
-
-			this.extractStateVariables();
-			this.mapFunctionEvents();
-
-			const content = this.renderTemplate();
-			const document = await vscode.workspace.openTextDocument({
-				content,
-				language: "solidity",
-			});
-			await vscode.window.showTextDocument(document);
+			await this.loadScaffoldAnalysis(filePath);
+			const targetUri = await this.writeScaffoldFile(
+				this.config.testDir,
+				`${this.contractName}.t.sol`,
+				this.renderTemplate()
+			);
 			this.logger.logToOutput(`Generated test file for ${this.contractName}`);
+			return targetUri;
 		} catch (error) {
 			this.logger.logToOutput(`Error generating test file: ${(error as Error).stack}`);
+			return undefined;
+		}
+	}
+
+	public async generateDeploymentScriptFile(filePath: string): Promise<vscode.Uri | undefined> {
+		try {
+			await this.loadScaffoldAnalysis(filePath);
+			const targetUri = await this.writeScaffoldFile(
+				this.config.scriptDir,
+				`Deploy${this.contractName}.s.sol`,
+				this.renderDeploymentScriptTemplate()
+			);
+			this.logger.logToOutput(`Generated deployment script for ${this.contractName}`);
+			return targetUri;
+		} catch (error) {
+			this.logger.logToOutput(`Error generating deployment script: ${(error as Error).stack}`);
+			return undefined;
+		}
+	}
+
+	private async loadScaffoldAnalysis(filePath: string): Promise<void> {
+		const wsName = path.basename(this.workspaceRoot.fsPath);
+		let normalized = filePath;
+		if (normalized.startsWith(wsName + path.sep)) {
+			normalized = normalized.slice(wsName.length + 1);
+		}
+
+		const absolutePath = path.join(this.workspaceRoot.fsPath, normalized);
+		const sourceCode = await vscode.workspace.fs.readFile(vscode.Uri.file(absolutePath));
+		this.sourceCode = Buffer.from(sourceCode).toString("utf8");
+		this.dependencies.clear();
+		this.dependencyImportPaths.clear();
+		this.stateVariables.clear();
+		this.events.clear();
+
+		const analyzer = new SolidityScaffoldAnalyzer(this.workspaceRoot);
+		const analysis = await analyzer.analyze(normalized, this.contractName, this.abi);
+		this.contractName = analysis.contractName;
+		this.contractImportPath = analysis.contractImportPath;
+		this.contractInfo = analysis.contractInfo;
+		this.dependencyImportPaths = new Map(analysis.dependencyImportPaths);
+		for (const dependencyName of analysis.contractInfo.dependencies) {
+			this.dependencies.add(dependencyName);
+		}
+
+		this.extractStateVariables();
+		this.mapFunctionEvents();
+	}
+
+	private async writeScaffoldFile(
+		baseDirectory: string,
+		fileName: string,
+		content: string
+	): Promise<vscode.Uri> {
+		const targetUri = await this.resolveScaffoldUri(baseDirectory, fileName);
+		await vscode.workspace.fs.writeFile(targetUri, Buffer.from(content, "utf8"));
+		const document = await vscode.workspace.openTextDocument(targetUri);
+		await vscode.window.showTextDocument(document);
+		return targetUri;
+	}
+
+	private async resolveScaffoldUri(baseDirectory: string, fileName: string): Promise<vscode.Uri> {
+		const preferredDirectory = vscode.Uri.joinPath(this.workspaceRoot, baseDirectory);
+		await vscode.workspace.fs.createDirectory(preferredDirectory);
+
+		const preferredUri = vscode.Uri.joinPath(preferredDirectory, fileName);
+		if (!(await fileExists(preferredUri))) {
+			return preferredUri;
+		}
+
+		const parsed = path.parse(fileName);
+		const stubName = `${parsed.name}.stub${parsed.ext}`;
+		const stubUri = vscode.Uri.joinPath(preferredDirectory, stubName);
+		if (!(await fileExists(stubUri))) {
+			return stubUri;
+		}
+
+		let index = 2;
+		while (true) {
+			const candidateUri = vscode.Uri.joinPath(
+				preferredDirectory,
+				`${parsed.name}.stub${index}${parsed.ext}`
+			);
+			if (!(await fileExists(candidateUri))) {
+				return candidateUri;
+			}
+			index += 1;
 		}
 	}
 
@@ -311,6 +414,10 @@ contract {{CONTRACT}}Test is Test {
 		return this.replaceTokens(this.baseTemplate, context);
 	}
 
+	private renderDeploymentScriptTemplate(): string {
+		return this.replaceTokens(this.deploymentScriptTemplate, this.buildDeploymentContext());
+	}
+
 	private detectPattern(): ContractPattern {
 		return this.patterns.find(p => p.detect(this.sourceCode, this.abi)) || this.patterns[3];
 	}
@@ -319,6 +426,7 @@ contract {{CONTRACT}}Test is Test {
 		return {
 			CONTRACT: this.contractName,
 			CONTRACT_VAR: this.contractName.toLowerCase(),
+			CONTRACT_IMPORT_PATH: this.contractImportPath,
 			DEPENDENCY_IMPORTS: this.renderDependencyImports(),
 			DEPENDENCY_DECLARATIONS: this.renderDependencyDeclarations(),
 			DEPENDENCY_SETUP: this.renderDependencySetup(),
@@ -337,15 +445,23 @@ contract {{CONTRACT}}Test is Test {
 		};
 	}
 
+	private buildDeploymentContext(): Record<string, string> {
+		return {
+			CONTRACT: this.contractName,
+			CONTRACT_IMPORT_PATH: this.contractImportPath,
+			DEPENDENCY_IMPORTS: this.renderDependencyImports(),
+			DEPENDENCY_DECLARATIONS: this.renderDependencyDeclarations(),
+			DEPENDENCY_SETUP: this.renderDependencySetup(),
+			SCRIPT_PATTERN_IMPORTS: this.renderScriptPatternImports(),
+			SCRIPT_DEPLOY_BODY: this.renderScriptDeployBody(),
+		};
+	}
+
 	private replaceTokens(template: string, context: Record<string, string>): string {
 		return Object.entries(context).reduce(
 			(result, [key, value]) => result.replace(new RegExp(`{{${key}}}`, "g"), value),
 			template
 		);
-	}
-
-	private hasInitializer(abi: ABI): boolean {
-		return abi.some(item => item.name === "initialize");
 	}
 
 	private findDependencies(): void {
@@ -375,18 +491,18 @@ contract {{CONTRACT}}Test is Test {
 	}
 
 	private renderDependencyImports(): string {
-		const imports = Array.from(this.dependencies)
-			.map(dep => `import "src/${dep}.sol";`)
+		const imports = Array.from(this.dependencyImportPaths.entries())
+			.map(([, importPath]) => `import "${importPath}";`)
 			.join("\n");
 		return imports ? `\n${imports}` : "";
 	}
 
 	private renderDependencyDeclarations(): string {
-		if (this.dependencies.size === 0) {
+		if (this.dependencyImportPaths.size === 0) {
 			return "";
 		}
 
-		const declarations = Array.from(this.dependencies)
+		const declarations = Array.from(this.dependencyImportPaths.keys())
 			.map(dep => `${dep} public ${dep.toLowerCase()};`)
 			.join("\n    ");
 
@@ -394,11 +510,11 @@ contract {{CONTRACT}}Test is Test {
 	}
 
 	private renderDependencySetup(): string {
-		if (this.dependencies.size === 0) {
+		if (this.dependencyImportPaths.size === 0) {
 			return "";
 		}
 
-		const setup = Array.from(this.dependencies)
+		const setup = Array.from(this.dependencyImportPaths.keys())
 			.map(dep => `        ${dep.toLowerCase()} = new ${dep}();`)
 			.join("\n");
 
@@ -409,7 +525,7 @@ contract {{CONTRACT}}Test is Test {
 		const initializer = this.abi.find(item => item.name === "initialize");
 		return initializer?.inputs?.length
 			? `abi.encodeCall(${this.contractName}.initialize, (${this.buildParamList(initializer.inputs)}))`
-			: '""';
+			: 'bytes("")';
 	}
 
 	private getConstructorParams(): string {
@@ -417,11 +533,37 @@ contract {{CONTRACT}}Test is Test {
 		return constructor?.inputs ? this.buildParamList(constructor.inputs) : "";
 	}
 
+	private renderScriptPatternImports(): string {
+		switch (this.contractInfo.upgradeType) {
+			case "uups":
+			case "transparent":
+			case "beacon":
+				return '\nimport {Upgrades} from "openzeppelin-foundry-upgrades/Upgrades.sol";';
+			default:
+				return "";
+		}
+	}
+
+	private renderScriptDeployBody(): string {
+		const contractReference = this.contractImportPath;
+
+		switch (this.contractInfo.upgradeType) {
+			case "uups":
+				return `        deployed = Upgrades.deployUUPSProxy(\n            "${contractReference}",\n            ${this.getInitData()}\n        );`;
+			case "transparent":
+				return `        deployed = Upgrades.deployTransparentProxy(\n            "${contractReference}",\n            msg.sender,\n            ${this.getInitData()}\n        );`;
+			case "beacon":
+				return `        address beacon = Upgrades.deployBeacon("${contractReference}", msg.sender);\n        deployed = Upgrades.deployBeaconProxy(beacon, ${this.getInitData()});`;
+			default:
+				return `        ${this.contractName} instance = new ${this.contractName}(${this.getConstructorParams()});\n        deployed = address(instance);`;
+		}
+	}
+
 	private buildParamList(inputs: any[]): string {
 		return inputs
 			.map(input => {
 				const contractName = this.extractContractName(input);
-				if (contractName && this.dependencies.has(contractName)) {
+				if (contractName && this.dependencyImportPaths.has(contractName)) {
 					return contractName.toLowerCase();
 				}
 				return this.getDefaultValue(input);
@@ -455,10 +597,14 @@ contract {{CONTRACT}}Test is Test {
 			return '"test"';
 		}
 		if (type === "bytes") {
-			return '"0x01"';
+			return 'hex"01"';
 		}
 		if (type?.startsWith("bytes") && type !== "bytes") {
-			return '"0x01"';
+			const size = Number.parseInt(type.replace("bytes", ""), 10);
+			if (Number.isFinite(size) && size > 0) {
+				return `hex"${"00".repeat(size)}"`;
+			}
+			return 'hex"00"';
 		}
 
 		if (type?.endsWith("[]")) {
@@ -472,7 +618,7 @@ contract {{CONTRACT}}Test is Test {
 				const baseType = match[1];
 				const size = parseInt(match[2]);
 				const defaultVal = this.getDefaultValue({ type: baseType });
-				return `[${Array(Math.min(size, 3)).fill(defaultVal).join(", ")}${size > 3 ? ", ..." : ""}]`;
+				return `[${Array(size).fill(defaultVal).join(", ")}]`;
 			}
 		}
 
@@ -590,7 +736,6 @@ contract {{CONTRACT}}Test is Test {
 
 		return `
     function test_${name}() public {
-        // Change caller as needed (ALICE, BOB, CHARLIE, DAVE)
         vm.startPrank(BOB);
         ${eventAssertions.setup}
         ${this.contractName.toLowerCase()}.${func.name}${analysis.isPayable ? "{value: 1 ether}" : ""}(${params});
@@ -610,19 +755,9 @@ contract {{CONTRACT}}Test is Test {
 		const setup = "vm.recordLogs();";
 		const assertions = functionEvents
 			.map((event, index) => {
-				let eventAssertions = `Vm.Log[] memory logs = vm.getRecordedLogs();
+				return `Vm.Log[] memory logs = vm.getRecordedLogs();
         assertGe(logs.length, ${index + 1});
         assertEq(logs[${index}].topics[0], keccak256("${event.signature}"));`;
-
-				if (event.indexed.length > 0) {
-					eventAssertions += `\n        /// @dev Verify indexed parameters: ${event.indexed.join(", ")}`;
-				}
-
-				if (event.nonIndexed.length > 0) {
-					eventAssertions += `\n        /// @dev Decode and verify non-indexed parameters: ${event.nonIndexed.join(", ")}`;
-				}
-
-				return eventAssertions;
 			})
 			.join("\n        ");
 
@@ -861,14 +996,7 @@ contract {{CONTRACT}}Test is Test {
 			return "";
 		}
 
-		return `
-
-    function testFuzz_FunctionCall(address caller) public {
-        vm.assume(caller != address(0));
-        vm.startPrank(caller);
-        assertTrue(true);
-        vm.stopPrank();
-    }`;
+		return functions.map(func => this.renderFuzzTest(func)).join("");
 	}
 
 	private renderFuzzTest(func: any): string {

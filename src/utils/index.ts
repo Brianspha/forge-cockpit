@@ -8,7 +8,11 @@ export const ACTIVE_NODE_KEY = "FORGE_COCKPIT_ACTIVE_NODES";
 export const ForgeCockpitCommand = {
 	TransferCommand: "forge-cockpit.transfer",
 	LoadCockPitWalletsCommand: "forge-cockpit.loadWallets",
+	GetProjectStatusCommand: "forge-cockpit.getProjectStatus",
+	GetCockpitSettingsCommand: "forge-cockpit.getCockpitSettings",
+	UpdateCockpitSettingCommand: "forge-cockpit.updateCockpitSetting",
 	StubForgeTestsCommand: "forge-cockpit.stubForgeTests",
+	StubForgeDeploymentScriptCommand: "forge-cockpit.stubForgeDeploymentScript",
 	ShowForgeCockPitCommand: "cockpit.showForgeCockPit",
 	RebuildProjectCommand: "forge-cockpit.rebuildProject",
 	RunTestCommand: "forge-cockpit.runTest",
@@ -33,6 +37,10 @@ export const ForgeCockpitCommand = {
 
 export const WebviewCommand = {
 	LoadCockpitWallets: "loadWallets",
+	GetProjectStatusCommand: "getProjectStatus",
+	GetCockpitSettingsCommand: "getCockpitSettings",
+	UpdateCockpitSettingCommand: "updateCockpitSetting",
+	RebuildProjectCommand: "rebuildProject",
 	OpenLinkCommand: "openLink",
 	GetActiveNodesCommand: "getActiveNodes",
 	StopNodeCommand: "stopNode",
@@ -64,6 +72,9 @@ export const ClipBoardTypeCommand = {
 export const ForgeCockPitResponseCommand = {
 	GetDefaultWalletsResponse: "getDefaultWalletResponse",
 	GetActiveNodesResponse: "getActiveNodesResponse",
+	ProjectStatusResponse: "projectStatusResponse",
+	CockpitSettingsResponse: "cockpitSettingsResponse",
+	RebuildProjectResponse: "rebuildProjectResponse",
 	DeployContractResponse: "deployContractResponse",
 	WalletBalancesResponse: "walletBalancesResponse",
 	ExecuteFunctionResponse: "executeFunctionResponse",
@@ -254,6 +265,10 @@ export function safeStringify(obj: any): string {
 	);
 }
 
+export function normalizeWorkspacePath(relativePath: string): string {
+	return relativePath.replace(/\\/g, "/");
+}
+
 export const DEFAULT_ANVIL_ACCOUNTS = {
 	accounts: {
 		"0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80":
@@ -314,8 +329,7 @@ export async function fileExists(uri: vscode.Uri): Promise<boolean> {
 	try {
 		await vscode.workspace.fs.stat(uri);
 		return true;
-	} catch (err: any) {
-		// We dont care about the specific error, just that it exists or not
+	} catch {
 		return false;
 	}
 }

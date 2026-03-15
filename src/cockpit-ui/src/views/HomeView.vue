@@ -21,10 +21,12 @@
   import DeploymentModal from '../components/contract/DeploymentModal.vue';
   import AnvilModal from '../components/contract/AnvilModal.vue';
   import Shimmer from '../components/state/Shimmer.vue';
+  import CockpitSettingsPanel from '../components/state/CockpitSettingsPanel.vue';
   import type {
     ABI,
     ActiveContractTab,
     AnvilModalExposed,
+    CockpitSettingUpdate,
     DeployContract,
     DeployInputType,
     ForkInfo,
@@ -33,6 +35,8 @@
     ScriptResponse,
     AbiInputData,
     EncodeResponse,
+    LocalProjectState,
+    MessageResponse,
     TransferResponse,
     TokenInfoResponse,
     ActiveContractTypeTab,
@@ -49,10 +53,11 @@
   import { useAppStore } from '../stores/useAppstore';
   import { useContractStore } from '../stores/useContractStore';
 
-  const latestMessage = inject<Ref<any>>('latestMessage');
+  const latestMessage = inject<Ref<MessageResponse | null>>('latestMessage');
   const showForkInterface = ref(false);
   const showDeploymentModal = ref(false);
   const showAnvilModal = ref(false);
+  const showSettingsPanel = ref(false);
   const contractToDeploy = ref<string>('');
   const constructorArgs = ref<Function | null>(null);
   const searchQuery = ref<string>('');
@@ -98,6 +103,46 @@
 
   const onShowForkContract = () => {
     showForkInterface.value = !showForkInterface.value;
+  };
+
+  const toggleSettingsPanel = () => {
+    showSettingsPanel.value = !showSettingsPanel.value;
+    if (showSettingsPanel.value && !appStore.settingsLoaded) {
+      appStore.requestCockpitSettings();
+    }
+  };
+
+  const isLocalProjectReady = computed(
+    () => appStore.localProjectState.status === 'ready'
+  );
+
+  const isProjectRebuilding = computed(
+    () => appStore.localProjectState.status === 'rebuilding'
+  );
+
+  const localProjectTitle = computed(() => {
+    switch (appStore.localProjectState.status) {
+      case 'rebuilding':
+        return 'Rebuilding Local Artifacts';
+      case 'stale':
+        return 'Local Artifacts Are Stale';
+      case 'error':
+        return 'Local Project Error';
+      default:
+        return 'Local Artifacts Required';
+    }
+  });
+
+  const localProjectActionLabel = computed(() =>
+    appStore.localProjectState.status === 'rebuilding'
+      ? undefined
+      : 'Rebuild Project'
+  );
+
+  const cockpitSettings = computed(() => appStore.cockpitSettings);
+
+  const updateCockpitSetting = (setting: CockpitSettingUpdate) => {
+    appStore.updateCockpitSetting(setting);
   };
 
   const selectedContract = computed(() => {
@@ -193,7 +238,37 @@
     showDeploymentModal.value = !showDeploymentModal.value;
   };
 
+  const requestProjectRebuild = () => {
+    if (isProjectRebuilding.value) {
+      return;
+    }
+
+    appStore.setLocalProjectState({
+      ...appStore.localProjectState,
+      status: 'rebuilding',
+      message: 'Rebuilding local artifacts...',
+      updatedAt: new Date().toISOString(),
+    } as LocalProjectState);
+    appStore.sendMessage(WebviewCommand.RebuildProjectCommand, undefined);
+  };
+
+  const ensureLocalProjectReady = () => {
+    if (isLocalProjectReady.value) {
+      return true;
+    }
+
+    if (!isProjectRebuilding.value) {
+      requestProjectRebuild();
+    }
+
+    return false;
+  };
+
   const openDeploymentModal = (config: DeployContract) => {
+    if (!ensureLocalProjectReady()) {
+      return;
+    }
+
     contractToDeploy.value = config.contractName;
     selectedNodeUrl.value = config.nodeUrl;
 
@@ -223,6 +298,10 @@
   };
 
   const handleDeployment = (config: DeployContract) => {
+    if (!ensureLocalProjectReady()) {
+      return;
+    }
+
     contractToDeploy.value = config.contractName;
     isDeploying.value[config.contractName] = true;
     contractStore.deployContract(WebviewCommand.DeployContractCommand, {
@@ -247,6 +326,10 @@
   };
 
   const handleRunScript = (config: DeployContract) => {
+    if (!ensureLocalProjectReady()) {
+      return;
+    }
+
     isRunningScript.value[config.contractName] = true;
     contractStore.runScript(WebviewCommand.RunScriptCommand, {
       ...config,
@@ -289,6 +372,10 @@
   };
 
   const refreshContracts = () => {
+    if (!ensureLocalProjectReady()) {
+      return;
+    }
+
     contractStore.refreshContracts();
   };
 
@@ -299,6 +386,10 @@
     contractAddress: string,
     staticCall: boolean = false
   ) => {
+    if (!ensureLocalProjectReady()) {
+      return;
+    }
+
     contractStore.executeFunction({
       functionName,
       contractName,
@@ -420,6 +511,10 @@
 
   const handleExtensionMessage = (message: any) => {
     switch (message.type) {
+      case ForgeCockPitResponseCommand.ProjectStatusResponse:
+      case ForgeCockPitResponseCommand.RebuildProjectResponse:
+        appStore.handleIncomingMessage(message);
+        break;
       case ForgeCockPitResponseCommand.TransferResponse:
         const transfer = JSON.parse(message.payload) as TransferResponse;
         walletStore.setTransferResponse(transfer);
@@ -552,6 +647,13 @@
         break;
       case ForgeCockPitResponseCommand.SetContractsResponse:
         contractStore.setContracts(message);
+        if (
+          !contractStore.selectedContractId &&
+          activeContracts.value.length > 0 &&
+          activeTab.value !== 'encoder'
+        ) {
+          contractStore.selectedContractId = activeContracts.value[0].fileName;
+        }
         break;
     }
   };
@@ -565,7 +667,6 @@
   }
 
   onMounted(() => {
-    contractStore.refreshContracts();
     anvilStore.sendMessage(WebviewCommand.GetActiveNodesCommand, '');
     setTimeout(() => {
       onChangeTab(activeTab.value);
@@ -589,7 +690,7 @@
         <button
           class="action-button refresh-button"
           @click="refreshContracts"
-          :disabled="contractStore.isLoading"
+          :disabled="contractStore.isLoading || isProjectRebuilding"
         >
           <span v-if="contractStore.isLoading">
             <LoadingSpinner size="small" />
@@ -597,6 +698,34 @@
           </span>
           <span v-else>Refresh Contracts</span>
         </button>
+        <button
+          class="action-button rebuild-button"
+          @click="requestProjectRebuild"
+          :disabled="isProjectRebuilding"
+        >
+          <span v-if="isProjectRebuilding">Rebuilding...</span>
+          <span v-else>Rebuild Project</span>
+        </button>
+        <div class="settings-anchor">
+          <button
+            class="action-button settings-button"
+            @click="toggleSettingsPanel"
+            :disabled="appStore.isUpdatingSettings"
+          >
+            <span>
+              {{ appStore.isUpdatingSettings ? 'Saving...' : 'Settings' }}
+            </span>
+          </button>
+          <CockpitSettingsPanel
+            :is-open="showSettingsPanel"
+            :settings="cockpitSettings"
+            :is-updating="appStore.isUpdatingSettings"
+            @close="showSettingsPanel = false"
+            @update-test-verbosity="
+              value => updateCockpitSetting({ key: 'testVerbosity', value })
+            "
+          />
+        </div>
       </div>
     </header>
 
@@ -655,6 +784,17 @@
                   @update-input="updateEncoderInput"
                   @encode-function="handleEncodeFunction"
                   @copy-to-clipboard="copyToClipboard"
+                />
+              </main>
+            </template>
+
+            <template v-else-if="!isLocalProjectReady">
+              <main class="content blocked-content">
+                <EmptyState
+                  :title="localProjectTitle"
+                  :message="appStore.localProjectState.message"
+                  :action-label="localProjectActionLabel"
+                  @action="requestProjectRebuild"
                 />
               </main>
             </template>
@@ -1093,6 +1233,12 @@
     align-items: center;
   }
 
+  .settings-anchor {
+    position: relative;
+    display: flex;
+    align-items: center;
+  }
+
   .action-button {
     background-color: var(--vscode-button-background, var(--primary-color));
     color: var(--vscode-button-foreground, white);
@@ -1237,6 +1383,12 @@
 
   .encoder-content {
     padding: 0;
+  }
+
+  .blocked-content {
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
 
   .shimmer-sidebar {

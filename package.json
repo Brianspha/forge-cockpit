@@ -10,7 +10,7 @@
     "url": "https://github.com/brianspha/forge-cockpit.git",
     "directory": ""
   },
-  "version": "1.7.13",
+  "version": "3.0.0",
   "engines": {
     "vscode": "^1.99.0"
   },
@@ -76,13 +76,25 @@
         "icon": "$(file-add)"
       },
       {
+        "command": "forge-cockpit.stubForgeDeploymentScript",
+        "title": "Generate Deployment Script Stub",
+        "category": "Forge Cockpit",
+        "icon": "$(new-file)"
+      },
+      {
         "command": "cockpit.showForgeCockPit",
         "title": "Open Cockpit",
         "category": "Forge Cockpit",
         "icon": "$(play)"
       },
       {
-        "command": "cockpit.clearCache",
+        "command": "forge-cockpit.rebuildProject",
+        "title": "Rebuild Project",
+        "category": "Forge Cockpit",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "forge-cockpit.clearCache",
         "title": "Clear Cockpit Cache",
         "category": "Forge Cockpit",
         "icon": "$(notebook-delete-cell)"
@@ -108,7 +120,24 @@
         "title": "Run All Tests",
         "icon": "$(notebook-execute-all)"
       }
-    ]
+    ],
+    "configuration": {
+      "title": "Forge Cockpit",
+      "properties": {
+        "forge-cockpit.testVerbosity": {
+          "type": "string",
+          "enum": [
+            "-v",
+            "-vv",
+            "-vvv",
+            "-vvvv",
+            "-vvvvv"
+          ],
+          "default": "-vvvvv",
+          "description": "Default verbosity flag used for Forge test runs."
+        }
+      }
+    }
   },
   "scripts": {
     "vscode:prepublish": "npm run compile && npm run build:ui",

@@ -344,32 +344,64 @@ export class ForgeTestProvider {
 		item.children?.forEach(child => this.collectTestItems(child, collected, excluded));
 	}
 
-	public runTest(test: SingleTest): void {
-		const testId = `${test.contractName}:${test.testName}`;
-		const testItem = this.testItems.get(testId);
-		if (testItem) {
-			const request = new vscode.TestRunRequest([testItem]);
-			this.runHandler(request, new vscode.CancellationTokenSource().token, false);
-		}
+	private normalizeContractPath(contractName: string): string {
+		return contractName.replace(/\\/g, "/");
 	}
 
-	public runTestViaIR(test: SingleTest): void {
-		const testId = `${test.contractName}:${test.testName}`;
-		const testItem = this.testItems.get(testId);
-
-		if (testItem) {
-			const request = new vscode.TestRunRequest([testItem]);
-			this.runHandler(request, new vscode.CancellationTokenSource().token, true);
+	private resolveTestItem(test: SingleTest): vscode.TestItem | undefined {
+		const normalizedContractPath = this.normalizeContractPath(test.contractName);
+		const directId = `${normalizedContractPath}:${test.testName}`;
+		const directMatch = this.testItems.get(directId);
+		if (directMatch) {
+			return directMatch;
 		}
+
+		const basename = normalizedContractPath.split("/").pop();
+		if (!basename) {
+			return undefined;
+		}
+
+		for (const [testId, testItem] of this.testItems.entries()) {
+			const [contractPath, testName] = testId.split(":");
+			if (testName === test.testName && contractPath.split("/").pop() === basename) {
+				return testItem;
+			}
+		}
+
+		return undefined;
 	}
 
-	public runGroup(groupId: string): void {
+	private async dispatchTestRun(test: SingleTest, viaIR: boolean): Promise<boolean> {
+		await this.refreshTests();
+		const testItem = this.resolveTestItem(test);
+		if (!testItem) {
+			return false;
+		}
+
+		const request = new vscode.TestRunRequest([testItem]);
+		void this.runHandler(request, new vscode.CancellationTokenSource().token, viaIR);
+		return true;
+	}
+
+	public async runTest(test: SingleTest): Promise<boolean> {
+		return this.dispatchTestRun(test, false);
+	}
+
+	public async runTestViaIR(test: SingleTest): Promise<boolean> {
+		return this.dispatchTestRun(test, true);
+	}
+
+	public async runGroup(groupId: string): Promise<boolean> {
+		await this.refreshTests();
 		const groupItem = this.testItems.get(groupId);
 
 		if (groupItem) {
 			const request = new vscode.TestRunRequest([groupItem]);
-			this.runHandler(request, new vscode.CancellationTokenSource().token, false);
+			void this.runHandler(request, new vscode.CancellationTokenSource().token, false);
+			return true;
 		}
+
+		return false;
 	}
 
 	public dispose(): void {

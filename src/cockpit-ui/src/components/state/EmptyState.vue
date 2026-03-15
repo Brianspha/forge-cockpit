@@ -2,6 +2,11 @@
   defineProps<{
     title: string;
     message: string;
+    actionLabel?: string;
+  }>();
+
+  defineEmits<{
+    (e: 'action'): void;
   }>();
 </script>
 
@@ -10,6 +15,14 @@
     <div class="empty-icon">📄</div>
     <h3 class="empty-title">{{ title }}</h3>
     <p class="empty-message">{{ message }}</p>
+    <button
+      v-if="actionLabel"
+      class="empty-action"
+      type="button"
+      @click="$emit('action')"
+    >
+      {{ actionLabel }}
+    </button>
   </div>
 </template>
 
@@ -41,5 +54,19 @@
   .empty-message {
     font-size: 14px;
     max-width: 400px;
+  }
+
+  .empty-action {
+    margin-top: var(--space-md);
+    padding: 8px 14px;
+    border: 1px solid var(--vscode-button-border, transparent);
+    border-radius: 6px;
+    background-color: var(--vscode-button-background);
+    color: var(--vscode-button-foreground);
+    cursor: pointer;
+  }
+
+  .empty-action:hover {
+    background-color: var(--vscode-button-hoverBackground);
   }
 </style>

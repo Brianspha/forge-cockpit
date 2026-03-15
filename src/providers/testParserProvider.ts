@@ -96,6 +96,7 @@ export class TestParserProvider {
 		}
 
 		try {
+			this.watcher?.dispose();
 			const pattern = new vscode.RelativePattern(
 				this.config.workspaceRoot,
 				`${this.config.testDir}/**/*.t.sol`

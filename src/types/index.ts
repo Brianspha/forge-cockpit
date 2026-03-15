@@ -24,6 +24,38 @@ export type BaseResponse = {
 	error?: string;
 };
 
+export type LocalProjectStatus = "ready" | "stale" | "missingArtifacts" | "rebuilding" | "error";
+
+export type LocalProjectState = {
+	status: LocalProjectStatus;
+	message: string;
+	hasArtifacts: boolean;
+	projectRoot?: string;
+	updatedAt: string;
+};
+
+export type CockpitSettingKey = "testVerbosity";
+
+export type CockpitProjectSettings = {
+	projectRoot: string;
+	srcDir: string;
+	testDir: string;
+	scriptDir: string;
+	outputDir: string;
+	viaIR: boolean;
+};
+
+export type CockpitSettings = {
+	testVerbosity: string;
+	availableVerbosityLevels: string[];
+	project: CockpitProjectSettings;
+};
+
+export type CockpitSettingUpdate = {
+	key: CockpitSettingKey;
+	value: string;
+};
+
 export type ContractIdentifier = {
 	contractName: string;
 	filePath: string;
@@ -119,6 +151,8 @@ export type CustomTaskDefinition = vscode.TaskDefinition & {
 	contractFile?: string;
 	nodeUrl?: string;
 	args?: string[];
+	viaIR?: boolean;
+	verbosity?: string;
 };
 
 export type DeployContract = NetworkContext & {

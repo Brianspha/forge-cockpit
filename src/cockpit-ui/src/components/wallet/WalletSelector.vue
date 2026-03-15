@@ -107,6 +107,14 @@
     currentDropdownId.value = '';
   };
 
+  const copyWalletAddress = (address: string) => {
+    if (!address) {
+      return;
+    }
+
+    store.sendMessage(WebviewCommand.WriteClipboardCommand, address);
+  };
+
   const handleWalletImport = (address: string) => {
     if (address && isValidAddress(address)) {
       store.addCustomWallet(address);
@@ -350,6 +358,7 @@
       :activeWallet="currentWallet"
       :balances="balances"
       @select="handleWalletSelect"
+      @copy="copyWalletAddress"
       @remove="store.removeCustomWallet"
       @close="closeDropdown"
       @import="openImportModal"

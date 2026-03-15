@@ -22,6 +22,9 @@ import {
 	AbiInputData,
 	TransferTransaction,
 	TransferResponse,
+	LocalProjectState,
+	CockpitSettings,
+	CockpitSettingUpdate,
 } from "../types";
 import {
 	encodeFunction,
@@ -129,6 +132,35 @@ export class ForgeCockPitPanel {
 				const payload = this.toSafePayload(message.payload);
 
 				switch (command) {
+					case WebviewCommand.GetProjectStatusCommand: {
+						const projectState = (await commands.executeCommand(
+							ForgeCockpitCommand.GetProjectStatusCommand
+						)) as LocalProjectState;
+						ForgeCockPitPanel.sendProjectStatus(projectState, command);
+						break;
+					}
+					case WebviewCommand.GetCockpitSettingsCommand: {
+						const settings = (await commands.executeCommand(
+							ForgeCockpitCommand.GetCockpitSettingsCommand
+						)) as CockpitSettings;
+						ForgeCockPitPanel.sendCockpitSettings(settings, command);
+						break;
+					}
+					case WebviewCommand.UpdateCockpitSettingCommand: {
+						const settings = (await commands.executeCommand(
+							ForgeCockpitCommand.UpdateCockpitSettingCommand,
+							payload as CockpitSettingUpdate
+						)) as CockpitSettings;
+						ForgeCockPitPanel.sendCockpitSettings(settings, command);
+						break;
+					}
+					case WebviewCommand.RebuildProjectCommand: {
+						const projectState = (await commands.executeCommand(
+							ForgeCockpitCommand.RebuildProjectCommand
+						)) as LocalProjectState;
+						ForgeCockPitPanel.sendProjectStatus(projectState, command);
+						break;
+					}
 					case WebviewCommand.GetActiveNodesCommand:
 						await ForgeCockPitPanel.sendActiveNodes(command);
 						break;
@@ -214,7 +246,9 @@ export class ForgeCockPitPanel {
 						break;
 					case WebviewCommand.WriteClipboardCommand:
 						window.showInformationMessage("Copied to Clipboard");
-						await env.clipboard.writeText(JSON.stringify(payload));
+						await env.clipboard.writeText(
+							typeof payload === "string" ? payload : JSON.stringify(payload)
+						);
 						break;
 					case WebviewCommand.RunScriptCommand:
 						const scriptResults = (await commands.executeCommand(
@@ -297,6 +331,33 @@ export class ForgeCockPitPanel {
 				previousType: command.toString(),
 			});
 		}
+	}
+
+	public static sendProjectStatus(
+		projectState: LocalProjectState,
+		command: string = WebviewCommand.GetProjectStatusCommand
+	) {
+		if (ForgeCockPitPanel.currentPanel) {
+			ForgeCockPitPanel.currentPanel._panel.webview.postMessage({
+				type:
+					command === WebviewCommand.RebuildProjectCommand
+						? ForgeCockPitResponseCommand.RebuildProjectResponse
+						: ForgeCockPitResponseCommand.ProjectStatusResponse,
+				payload: projectState,
+				previousType: command.toString(),
+			});
+		}
+	}
+
+	public static sendCockpitSettings(
+		settings: CockpitSettings,
+		command: string = WebviewCommand.GetCockpitSettingsCommand
+	) {
+		ForgeCockPitPanel.currentPanel?._panel.webview.postMessage({
+			type: ForgeCockPitResponseCommand.CockpitSettingsResponse,
+			payload: settings,
+			previousType: command.toString(),
+		});
 	}
 
 	private toSafePayload(payload: any): string | Object {

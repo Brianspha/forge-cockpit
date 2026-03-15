@@ -10,6 +10,7 @@
 
   const emit = defineEmits<{
     (e: 'select', address: string): void;
+    (e: 'copy', address: string): void;
     (e: 'remove', address: string): void;
     (e: 'close'): void;
     (e: 'import'): void;
@@ -102,6 +103,11 @@
     emit('select', address);
   };
 
+  const copyWallet = (address: string, event: Event) => {
+    event.stopPropagation();
+    emit('copy', address);
+  };
+
   const openImportModal = () => {
     emit('close');
     setTimeout(() => {
@@ -161,6 +167,28 @@
           <div class="wallet-item-balance">{{ wallet.balance }}</div>
           <div v-if="wallet.isActive" class="wallet-badge active">Active</div>
         </div>
+        <button
+          class="wallet-item-copy"
+          @click="copyWallet(wallet.address, $event)"
+          title="Copy address"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+            <path
+              d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"
+            ></path>
+          </svg>
+        </button>
         <button
           class="wallet-item-remove"
           @click="removeWallet(wallet.address, $event)"
@@ -333,6 +361,7 @@
     color: white;
   }
 
+  .wallet-item-copy,
   .wallet-item-remove {
     display: flex;
     align-items: center;
@@ -347,15 +376,24 @@
     cursor: pointer;
     color: var(--vscode-foreground);
     position: absolute;
-    right: 10px;
     top: 50%;
     transform: translateY(-50%);
   }
 
+  .wallet-item-copy {
+    right: 40px;
+  }
+
+  .wallet-item-remove {
+    right: 10px;
+  }
+
+  .wallet-item:hover .wallet-item-copy,
   .wallet-item:hover .wallet-item-remove {
     opacity: 0.7;
   }
 
+  .wallet-item-copy:hover,
   .wallet-item-remove:hover {
     background-color: var(
       --vscode-inputValidation-errorBackground,

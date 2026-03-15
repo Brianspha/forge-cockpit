@@ -1,8 +1,9 @@
 import * as vscode from "vscode";
 import { CustomTaskDefinition } from "../types";
 import { FoundryProjectController } from "../controllers/forgeProjectController";
-import { ForgeCockpitCommand } from "../utils";
+import { ForgeCockpitCommand, WebviewCommand } from "../utils";
 import { CockPitLogProvider } from "./logProvider";
+import { ForgeCockPitPanel } from "../panels/forgeCockPitPanel";
 
 export class FoundryTaskProvider implements vscode.TaskProvider {
 	private tasks = new Map<string, vscode.Task>();
@@ -23,7 +24,7 @@ export class FoundryTaskProvider implements vscode.TaskProvider {
 				const task = execution.task;
 				const definition = task.definition as CustomTaskDefinition;
 				if (definition.command === "fork") {
-					vscode.commands.executeCommand(ForgeCockpitCommand.GetActiveNodesCommand);
+					void ForgeCockPitPanel.sendActiveNodes(WebviewCommand.GetActiveNodesCommand);
 					this.closeTaskTerminal(task.name);
 				}
 				this.executions.delete(taskId);
@@ -63,10 +64,10 @@ export class FoundryTaskProvider implements vscode.TaskProvider {
 				if (definition.contractFile) {
 					testArgs.push("--match-path", definition.contractFile);
 				}
-				if (config.viaIR) {
+				if (definition.viaIR ?? config.viaIR) {
 					testArgs.push("--via-ir");
 				}
-				testArgs.push(config.verbosity);
+				testArgs.push(definition.verbosity ?? config.verbosity);
 
 				execution = new vscode.ShellExecution("forge", testArgs.filter(Boolean), {
 					cwd: config.workspaceRoot.fsPath,

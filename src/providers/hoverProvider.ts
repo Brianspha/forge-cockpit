@@ -1,7 +1,7 @@
 import * as vscode from "vscode";
-import * as path from "path";
 import { FoundryProjectController } from "../controllers/forgeProjectController";
 import { SingleTest } from "../types";
+import { normalizeWorkspacePath } from "../utils";
 
 export class TestHoverProvider implements vscode.HoverProvider {
 	constructor(private foundryManager: FoundryProjectController) {}
@@ -29,12 +29,14 @@ export class TestHoverProvider implements vscode.HoverProvider {
 		if (!lineText.includes("function")) {
 			return null;
 		}
-		const fileName = path.basename(document.fileName);
+		const relativePath = normalizeWorkspacePath(
+			vscode.workspace.asRelativePath(document.uri, false)
+		);
 
 		const runTestCommand = vscode.Uri.parse(
 			`command:forge-cockpit.runTest?${encodeURIComponent(
 				JSON.stringify({
-					contractName: fileName,
+					contractName: relativePath,
 					testName: word,
 				} as SingleTest)
 			)}`
@@ -42,7 +44,7 @@ export class TestHoverProvider implements vscode.HoverProvider {
 		const runTestCommandViaIR = vscode.Uri.parse(
 			`command:forge-cockpit.runTestViaIR?${encodeURIComponent(
 				JSON.stringify({
-					contractName: fileName,
+					contractName: relativePath,
 					testName: word,
 				} as SingleTest)
 			)}`

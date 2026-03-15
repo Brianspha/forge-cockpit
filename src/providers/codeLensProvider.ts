@@ -1,6 +1,6 @@
 import * as vscode from "vscode";
 import { SingleTest, TestFile } from "../types";
-import { ForgeCockpitCommand } from "../utils";
+import { ForgeCockpitCommand, normalizeWorkspacePath } from "../utils";
 import { CockPitLogProvider } from "./logProvider";
 
 export class TestCodeLensProvider implements vscode.CodeLensProvider {
@@ -118,7 +118,19 @@ export class TestCodeLensProvider implements vscode.CodeLensProvider {
 				],
 			};
 
+			const generateDeploymentScriptCmd = {
+				title: "Forge deploy script",
+				command: ForgeCockpitCommand.StubForgeDeploymentScriptCommand,
+				arguments: [
+					{
+						fileName: contractName,
+						filePath: normalizedPath,
+					} as TestFile,
+				],
+			};
+
 			codeLenses.push(new vscode.CodeLens(range, generateTestsCmd));
+			codeLenses.push(new vscode.CodeLens(range, generateDeploymentScriptCmd));
 		}
 	}
 
@@ -127,15 +139,16 @@ export class TestCodeLensProvider implements vscode.CodeLensProvider {
 	}
 
 	private normalizeTestPath(relativePath: string): string {
-		const testIndex = relativePath.indexOf("/test/");
+		const normalizedPath = normalizeWorkspacePath(relativePath);
+		const testIndex = normalizedPath.indexOf("/test/");
 		if (testIndex !== -1) {
-			return relativePath.substring(testIndex + 1);
+			return normalizedPath.substring(testIndex + 1);
 		}
 
-		if (relativePath.startsWith("test/")) {
-			return relativePath;
+		if (normalizedPath.startsWith("test/")) {
+			return normalizedPath;
 		}
 
-		return relativePath;
+		return normalizedPath;
 	}
 }

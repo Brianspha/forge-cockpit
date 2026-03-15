@@ -15,8 +15,12 @@
   onMounted(() => {
     window.addEventListener('message', event => {
       latestMessage.value = event.data;
+      appStore.handleIncomingMessage(event.data);
     });
     appStore.sendMessage(WebviewCommand.LoadCockpitWallets, undefined);
+    appStore.sendMessage(WebviewCommand.LoadContractsCommand, undefined);
+    appStore.sendMessage(WebviewCommand.GetProjectStatusCommand, undefined);
+    appStore.requestCockpitSettings();
   });
 </script>
 

@@ -10,6 +10,9 @@ import {
 	DeployedContract,
 	ForkInfo,
 	FunctionCall,
+	LocalProjectState,
+	CockpitSettings,
+	CockpitSettingUpdate,
 	ScriptResponse,
 	SingleTest,
 	TestFile,
@@ -36,7 +39,11 @@ export async function activate(context: vscode.ExtensionContext) {
 		const testParserProvider = new TestParserProvider(foundryProjectController.getConfig(), logger);
 		const abiProvider = new AbiProvider(foundryProjectController, logger);
 		abiProvider.initialize();
-		await testParserProvider.initialize();
+		await Promise.all([
+			testParserProvider.initialize(),
+			abiProvider.refresh(),
+			foundryProjectController.refreshLocalProjectState(),
+		]);
 		const testingProvider = new ForgeTestProvider(
 			testParserProvider.contracts,
 			testParserProvider.onDidChangeContracts,
@@ -54,6 +61,84 @@ export async function activate(context: vscode.ExtensionContext) {
 		});
 
 		context.subscriptions.push(
+			foundryProjectController.onDidChangeProjectState(projectState => {
+				ForgeCockPitPanel.sendProjectStatus(projectState);
+			}),
+			abiProvider.onDidChangeAbis(() => {
+				ForgeCockPitPanel.sendContracts(abiProvider.abis);
+			}),
+			vscode.workspace.onDidChangeConfiguration(event => {
+				if (event.affectsConfiguration("forge-cockpit.testVerbosity")) {
+					ForgeCockPitPanel.sendCockpitSettings(foundryProjectController.getCockpitSettings());
+				}
+			})
+		);
+
+		const rebuildAndRefreshProject = async (): Promise<LocalProjectState> => {
+			const projectState = await foundryProjectController.triggerBuild();
+			await Promise.all([
+				testParserProvider.refresh(),
+				testingProvider.refreshTests(),
+				abiProvider.refresh(),
+				foundryProjectController.refreshLocalProjectState(),
+			]);
+			return projectState;
+		};
+
+		const rebuildProjectIfPossible = async (notifyOnFailure: boolean = true): Promise<boolean> => {
+			const projectState = await rebuildAndRefreshProject();
+			if (projectState.status === "ready") {
+				return true;
+			}
+
+			if (notifyOnFailure) {
+				vscode.window.showErrorMessage(projectState.message);
+			}
+			return false;
+		};
+
+		const compileGeneratedScaffold = async (
+			targetUri: vscode.Uri | undefined,
+			label: string
+		): Promise<void> => {
+			if (!targetUri) {
+				return;
+			}
+
+			const relativePath = vscode.workspace.asRelativePath(targetUri);
+			const rebuildSucceeded = await rebuildProjectIfPossible(false);
+			if (rebuildSucceeded) {
+				vscode.window.showInformationMessage(`Generated ${label}: ${relativePath}`);
+				return;
+			}
+
+			vscode.window.showWarningMessage(
+				`Generated ${label}: ${relativePath}. Fix the build errors and rebuild again.`
+			);
+		};
+
+		const runTestWithRetry = async (test: SingleTest, viaIR: boolean): Promise<void> => {
+			const runSucceeded = viaIR
+				? await testingProvider.runTestViaIR(test)
+				: await testingProvider.runTest(test);
+			if (runSucceeded) {
+				return;
+			}
+
+			const rebuildSucceeded = await rebuildProjectIfPossible();
+			if (!rebuildSucceeded) {
+				return;
+			}
+
+			if (viaIR) {
+				await testingProvider.runTestViaIR(test);
+				return;
+			}
+
+			await testingProvider.runTest(test);
+		};
+
+		context.subscriptions.push(
 			vscode.commands.registerCommand(
 				ForgeCockpitCommand.StubForgeTestsCommand,
 				async (contract: TestFile): Promise<void> => {
@@ -65,19 +150,65 @@ export async function activate(context: vscode.ExtensionContext) {
 						return;
 					}
 
-					const stubTestProvider = new StubTestProvider(contractName, abi, logger);
+					const stubTestProvider = new StubTestProvider(
+						contractName,
+						abi,
+						logger,
+						foundryProjectController.getConfig()
+					);
+					const targetUri = await stubTestProvider.generateTestFile(contract.filePath);
+					await compileGeneratedScaffold(targetUri, "test scaffold");
+				}
+			),
+			vscode.commands.registerCommand(
+				ForgeCockpitCommand.StubForgeDeploymentScriptCommand,
+				async (contract: TestFile): Promise<void> => {
+					const contractName = contract.fileName.replace(/\.sol$/, "");
+					const abi = abiProvider.abis.find(a => a.fileName === contract.fileName)?.abi;
 
-					await stubTestProvider.generateTestFile(contract.filePath);
+					if (!abi) {
+						vscode.window.showErrorMessage(`ABI not found for ${abiProvider.abis.length} ABIs`);
+						return;
+					}
+
+					const stubTestProvider = new StubTestProvider(
+						contractName,
+						abi,
+						logger,
+						foundryProjectController.getConfig()
+					);
+					const targetUri = await stubTestProvider.generateDeploymentScriptFile(contract.filePath);
+					await compileGeneratedScaffold(targetUri, "deployment script");
 				}
 			),
 			vscode.commands.registerCommand(ForgeCockpitCommand.ShowForgeCockPitCommand, (): void => {
 				initWebView(context);
 				vscode.commands.executeCommand(ForgeCockpitCommand.PinEditorCommand);
-				vscode.commands.executeCommand(ForgeCockpitCommand.LoadCockPitWalletsCommand);
 			}),
-			vscode.commands.registerCommand(ForgeCockpitCommand.RebuildProjectCommand, (): void => {
-				foundryProjectController.triggerBuild();
-			}),
+			vscode.commands.registerCommand(
+				ForgeCockpitCommand.GetProjectStatusCommand,
+				(): LocalProjectState => {
+					return foundryProjectController.getLocalProjectState();
+				}
+			),
+			vscode.commands.registerCommand(
+				ForgeCockpitCommand.GetCockpitSettingsCommand,
+				(): CockpitSettings => {
+					return foundryProjectController.getCockpitSettings();
+				}
+			),
+			vscode.commands.registerCommand(
+				ForgeCockpitCommand.UpdateCockpitSettingCommand,
+				async (setting: CockpitSettingUpdate): Promise<CockpitSettings> => {
+					return foundryProjectController.updateCockpitSetting(setting);
+				}
+			),
+			vscode.commands.registerCommand(
+				ForgeCockpitCommand.RebuildProjectCommand,
+				async (): Promise<LocalProjectState> => {
+					return rebuildAndRefreshProject();
+				}
+			),
 			vscode.languages.registerCodeLensProvider(
 				{ language: "solidity", pattern: "**/*.sol" },
 				codeLensProvider
@@ -88,23 +219,39 @@ export async function activate(context: vscode.ExtensionContext) {
 			),
 			vscode.commands.registerCommand(
 				ForgeCockpitCommand.RunTestCommand,
-				(contract: SingleTest): void => {
-					testingProvider.runTest(contract);
+				async (contract: SingleTest): Promise<void> => {
+					await runTestWithRetry(contract, false);
 				}
 			),
 			vscode.commands.registerCommand(
 				ForgeCockpitCommand.RunTestViaIRCommand,
-				(contract: SingleTest): void => {
-					testingProvider.runTestViaIR(contract);
+				async (contract: SingleTest): Promise<void> => {
+					await runTestWithRetry(contract, true);
 				}
 			),
-			vscode.commands.registerCommand(ForgeCockpitCommand.RunGroupCommand, (path: string): void => {
-				testingProvider.runGroup(path);
-			}),
+			vscode.commands.registerCommand(
+				ForgeCockpitCommand.RunGroupCommand,
+				async (path: string): Promise<void> => {
+					const runSucceeded = await testingProvider.runGroup(path);
+					if (runSucceeded) {
+						return;
+					}
+
+					const rebuildSucceeded = await rebuildProjectIfPossible();
+					if (!rebuildSucceeded) {
+						return;
+					}
+					await testingProvider.runGroup(path);
+				}
+			),
 			vscode.commands.registerCommand(
 				ForgeCockpitCommand.RefreshTestsCommand,
 				async (): Promise<void> => {
-					await testingProvider.refreshTests();
+					await Promise.all([
+						testingProvider.refreshTests(),
+						abiProvider.refresh(),
+						foundryProjectController.refreshLocalProjectState(),
+					]);
 					ForgeCockPitPanel.sendContracts(abiProvider.abis);
 				}
 			),
@@ -144,9 +291,6 @@ export async function activate(context: vscode.ExtensionContext) {
 				ForgeCockpitCommand.ExecuteFunctionCommand,
 				async (callInfo: FunctionCall): Promise<any> => {
 					const walletProvider = new WalletProvider(callInfo.nodeUrl, logger);
-
-					// We need to append the full abi to the callInfo
-					// to be able to get any events emitted
 					const abi = abiProvider.abis.find(a => a.fileName === callInfo.contractAddress)?.abi;
 
 					return await walletProvider.executeFunction({
@@ -164,8 +308,6 @@ export async function activate(context: vscode.ExtensionContext) {
 					if (success && cachedNodes) {
 						const newNodes = cachedNodes?.filter(url => !url.includes(port));
 						await context.globalState.update(ACTIVE_NODE_KEY, newNodes);
-						// we dont execute these in parallel due to the dependence on
-						// the state being updated before we get active ndoes
 						ForgeCockPitPanel.sendActiveNodes(WebviewCommand.GetActiveNodesCommand);
 					}
 					return success;
@@ -189,7 +331,7 @@ export async function activate(context: vscode.ExtensionContext) {
 				ForgeCockpitCommand.GetActiveNodesCommand,
 				async (): Promise<any> => {
 					const nodes = await foundryProjectController.getActiveNodes();
-					const cachedNodes = (await context.globalState.get(ACTIVE_NODE_KEY)) as string[];
+					const cachedNodes = (await context.globalState.get<string[]>(ACTIVE_NODE_KEY)) ?? [];
 
 					const anvilNodeChecks = await Promise.all(
 						cachedNodes.map(async nodeUrl => {
@@ -219,12 +361,12 @@ export async function activate(context: vscode.ExtensionContext) {
 				async (): Promise<void> => {
 					const cachedNodes = context.globalState.get<string[]>(ACTIVE_NODE_KEY);
 					if (cachedNodes) {
-						await Promise.all([
+						await Promise.all(
 							cachedNodes.map(nodeUrl => {
 								const port = nodeUrl.split(":")[2];
 								return vscode.commands.executeCommand(ForgeCockpitCommand.StopNodeCommand, port);
-							}),
-						]);
+							})
+						);
 					}
 					await context.globalState.update(ACTIVE_NODE_KEY, []);
 					ForgeCockPitPanel.sendActiveNodes(WebviewCommand.GetActiveNodesCommand);

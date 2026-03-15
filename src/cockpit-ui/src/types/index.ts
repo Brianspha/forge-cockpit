@@ -24,6 +24,43 @@ export type BaseResponse = {
   error?: string;
 };
 
+export type LocalProjectStatus =
+  | 'ready'
+  | 'stale'
+  | 'missingArtifacts'
+  | 'rebuilding'
+  | 'error';
+
+export type LocalProjectState = {
+  status: LocalProjectStatus;
+  message: string;
+  hasArtifacts: boolean;
+  projectRoot?: string;
+  updatedAt: string;
+};
+
+export type CockpitSettingKey = 'testVerbosity';
+
+export type CockpitProjectSettings = {
+  projectRoot: string;
+  srcDir: string;
+  testDir: string;
+  scriptDir: string;
+  outputDir: string;
+  viaIR: boolean;
+};
+
+export type CockpitSettings = {
+  testVerbosity: string;
+  availableVerbosityLevels: string[];
+  project: CockpitProjectSettings;
+};
+
+export type CockpitSettingUpdate = {
+  key: CockpitSettingKey;
+  value: string;
+};
+
 export type NetworkContext = {
   nodeUrl: string;
 };
@@ -201,10 +238,12 @@ export type Message = BaseResponse & {
 export type MessageResponse = {
   payload: any;
   command: string;
-  previousType: string;
+  previousType?: string;
   type: string;
-  tabId: string;
-  previousPayload: string;
+  tabId?: string;
+  previousPayload?: string;
+  success?: boolean;
+  error?: string;
 };
 
 export type AnvilModalExposed = {
