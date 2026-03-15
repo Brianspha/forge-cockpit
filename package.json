@@ -10,7 +10,7 @@
     "url": "https://github.com/brianspha/forge-cockpit.git",
     "directory": ""
   },
-  "version": "3.0.0",
+  "version": "2.0.0",
   "engines": {
     "vscode": "^1.99.0"
   },
